@@ -2,13 +2,13 @@ const express = require('express');
 const router = express.Router();
 const deviceController = require('../controllers/deviceController');
 
-// GET /api/v1/devices/status - current state of all devices
+// GET /api/device/status - current state derived from latest DeviceAction per device
 router.get('/status', deviceController.getStatus);
 
-// GET /api/v1/devices/history - action log with pagination
-router.get('/history', deviceController.getHistory);
-
-// POST /api/v1/devices/control - toggle a device on/off
+// POST /api/device/control - user toggles a device, logs to DeviceAction, publishes MQTT
 router.post('/control', deviceController.control);
+
+// GET /api/device-actions - paginated action log, search by keyword + date range
+router.get('-actions', deviceController.getHistory);
 
 module.exports = router;

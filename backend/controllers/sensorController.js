@@ -1,9 +1,9 @@
 const { Sensor, SensorData } = require('../models');
 const { Op } = require('sequelize');
 
-// GET /api/v1/sensors/realtime
-// Returns latest value for each sensor (temperature, humidity, light)
-const getRealtime = async (req, res, next) => {
+// GET /api/sensors/latest
+// Returns the most recent value for each sensor (temperature, humidity, light)
+const getLatest = async (req, res, next) => {
     try {
         const sensors = await Sensor.findAll();
         const result = {};
@@ -59,4 +59,5 @@ const getHistory = async (req, res, next) => {
     }
 };
 
-module.exports = { getRealtime, getHistory };
+module.exports = { getLatest, getHistory };
+

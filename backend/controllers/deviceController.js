@@ -1,10 +1,10 @@
+const { Op } = require('sequelize');
 const { Device, DeviceAction } = require('../models');
+const { publishDeviceControl } = require('../services/mqttService');
 
-// In-memory device state (fallback when DB is empty)
 const defaultStates = { fan: false, airConditioner: false, light: false };
 
-// GET /api/v1/devices/status
-// Returns current on/off state for each device
+// GET /api/device/status
 const getStatus = async (req, res, next) => {
     try {
         const devices = await Device.findAll();
@@ -15,9 +15,7 @@ const getStatus = async (req, res, next) => {
                 where: { deviceID: device.ID },
                 order: [['date', 'DESC']],
             });
-            if (latest) {
-                status[device.name] = latest.action === 'ON';
-            }
+            if (latest) status[device.name] = latest.action === 'ON';
         }
 
         res.json(status);
@@ -26,37 +24,47 @@ const getStatus = async (req, res, next) => {
     }
 };
 
-// GET /api/v1/devices/history
-// Query params: page, limit, deviceName
+// GET /api/device-actions
+// Query: page, limit, keyword, fromDate, toDate
 const getHistory = async (req, res, next) => {
     try {
-        const page   = parseInt(req.query.page)  || 1;
-        const limit  = parseInt(req.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const page     = parseInt(req.query.page)  || 1;
+        const limit    = parseInt(req.query.limit) || 10;
+        const offset   = (page - 1) * limit;
+        const keyword  = req.query.keyword  || '';
+        const fromDate = req.query.fromDate || null;
+        const toDate   = req.query.toDate   || null;
 
-        const deviceWhere = {};
-        if (req.query.deviceName) deviceWhere.name = req.query.deviceName;
+        const where = {};
+        if (fromDate || toDate) {
+            where.date = {};
+            if (fromDate) where.date[Op.gte] = new Date(fromDate);
+            if (toDate)   where.date[Op.lte] = new Date(toDate);
+        }
+        if (keyword) {
+            where[Op.or] = [
+                { action: { [Op.like]: `%${keyword}%` } },
+                { status: { [Op.like]: `%${keyword}%` } },
+            ];
+        }
 
         const { count, rows } = await DeviceAction.findAndCountAll({
-            include: [{ model: Device, as: 'device', where: deviceWhere, attributes: ['name'] }],
+            where,
+            include: [{ model: Device, as: 'device', attributes: ['name'] }],
             order:  [['date', 'DESC']],
             limit,
             offset,
         });
 
-        res.json({
-            total:      count,
-            page,
-            totalPages: Math.ceil(count / limit),
-            data:       rows,
-        });
+        res.json({ total: count, page, totalPages: Math.ceil(count / limit), data: rows });
     } catch (err) {
         next(err);
     }
 };
 
-// POST /api/v1/devices/control
-// Body: { device: 'fan'|'airConditioner'|'light', action: 'ON'|'OFF' }
+// POST /api/device/control
+// Body: { device, action: 'ON'|'OFF' }
+// Step 3 spec: saveControlLog -> Step 4: publish MQTT iot/device/control
 const control = async (req, res, next) => {
     try {
         const { device: deviceName, action } = req.body;
@@ -81,6 +89,8 @@ const control = async (req, res, next) => {
             date:     new Date(),
             createAt: new Date(),
         });
+
+        publishDeviceControl(deviceName, action);
 
         res.json({ success: true, log });
     } catch (err) {
