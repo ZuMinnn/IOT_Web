@@ -71,7 +71,8 @@ export const SensorChart = ({ data }) => {
                         <XAxis
                             dataKey="time"
                             stroke="rgba(255,255,255,0.5)"
-                            tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                            tick={{ fill: 'rgba(255,255,255,0.7)', fontSize: 12 }}
+                            minTickGap={30}
                         />
                         <YAxis
                             stroke="rgba(255,255,255,0.5)"

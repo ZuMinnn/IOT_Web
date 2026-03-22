@@ -37,8 +37,7 @@ export const useSensorData = () => {
                 setHistory([{
                     id: ++lastIdRef.current,
                     ...initialData,
-                    time: now.toLocaleString('vi-VN', {
-                        day: '2-digit', month: '2-digit', year: 'numeric',
+                    time: now.toLocaleTimeString('vi-VN', {
                         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
                     })
                 }]);
@@ -74,8 +73,7 @@ export const useSensorData = () => {
                     setSensorData(newData);
 
                     const newId = ++lastIdRef.current;
-                    const formattedTime = timestamp.toLocaleString('vi-VN', {
-                        day: '2-digit', month: '2-digit', year: 'numeric',
+                    const formattedTime = timestamp.toLocaleTimeString('vi-VN', {
                         hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
                     });
 

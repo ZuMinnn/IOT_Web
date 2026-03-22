@@ -25,7 +25,7 @@ export const SENSOR_RANGES = {
 export const UPDATE_INTERVAL = 2500;
 
 // Chart data points to keep
-export const MAX_DATA_POINTS = 200;
+export const MAX_DATA_POINTS = 30;
 
 // Color palettes
 export const COLORS = {
