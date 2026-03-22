@@ -73,10 +73,21 @@ async function onDeviceStatus(payload) {
     const device = await Device.findOne({ where: { name: deviceName } });
     if (!device) return;
 
-    await DeviceAction.update(
-        { running: is_on ? 1 : 0 },
-        { where: { deviceID: device.ID }, order: [['date', 'DESC']], limit: 1 }
-    );
+    // Tìm record đang chờ xác nhận từ thiết bị
+    const pendingLog = await DeviceAction.findOne({
+        where: { deviceID: device.ID, status: 'pending' },
+        order: [['date', 'DESC']]
+    });
+
+    if (pendingLog) {
+        await pendingLog.update({ running: is_on ? 1 : 0, status: 'success' });
+    } else {
+        // Cập nhật trạng thái mới nhất do ấn nút cứng ở mạch thực tế
+        await DeviceAction.update(
+            { running: is_on ? 1 : 0 },
+            { where: { deviceID: device.ID }, order: [['date', 'DESC']], limit: 1 }
+        );
+    }
 
     pushDeviceStatus({ device: deviceName, is_on });
 }

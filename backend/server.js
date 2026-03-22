@@ -23,6 +23,9 @@ app.get('/api/health', (req, res) => {
 // Spec: /api/sensors/... and /api/device/... and /api/device-actions
 app.use('/api/sensors', sensorRoutes);
 app.use('/api/device', deviceRoutes);
+// Import controller directly for device-actions since it's at the root API level
+const deviceController = require('./controllers/deviceController');
+app.get('/api/device-actions', deviceController.getHistory);
 app.use(errorHandler);
 
 async function start() {

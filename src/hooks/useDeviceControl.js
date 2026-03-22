@@ -44,10 +44,25 @@ export const useDeviceControl = () => {
             try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'device' && msg.payload) {
-                    const { device, is_on } = msg.payload;
+                    const { device, is_on, error } = msg.payload;
+                    
+                    if (error === 'timeout') {
+                        alert(`Thiết bị ${device} không phản hồi! (Timeout)`);
+                        setLoadingStates((prev) => ({
+                            ...prev,
+                            [device]: false
+                        }));
+                        return;
+                    }
+
                     setDevices((prev) => ({
                         ...prev,
                         [device]: !!is_on
+                    }));
+                    // Tắt trạng thái pending khi phần cứng xác nhận
+                    setLoadingStates((prev) => ({
+                        ...prev,
+                        [device]: false
                     }));
                 }
             } catch (err) {}
@@ -64,6 +79,7 @@ export const useDeviceControl = () => {
     const toggleDevice = async (deviceName) => {
         const targetAction = !devices[deviceName] ? 'ON' : 'OFF';
 
+        // Bật trạng thái pending (sẽ chờ VĨNH VIỄN cho đến khi phần cứng gửi lại JSON qua MQTT)
         setLoadingStates((prev) => ({ ...prev, [deviceName]: true }));
 
         try {
@@ -74,15 +90,15 @@ export const useDeviceControl = () => {
             });
             const data = await res.json();
             
-            if (data.success) {
-                // Optimistic UI update
-                setDevices((prev) => ({ ...prev, [deviceName]: targetAction === 'ON' }));
-            } else {
+            if (!data.success) {
                 console.error('Failed to toggle device:', data.error);
+                // Chỉ tắt pending nếu backend trả về lỗi ngay lập tức
+                setLoadingStates((prev) => ({ ...prev, [deviceName]: false }));
             }
+            // Không cập nhật UI (không optimistic update). UI sẽ chỉ cập nhật khi WebSocket nhận được dữ liệu.
         } catch (err) {
             console.error('API Error toggling device', err);
-        } finally {
+            // Tắt pending nếu mất kết nối tới Backend API
             setLoadingStates((prev) => ({ ...prev, [deviceName]: false }));
         }
     };

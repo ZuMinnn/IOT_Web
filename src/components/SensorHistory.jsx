@@ -20,9 +20,10 @@ export const SensorHistory = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                const limitMultiplier = selectedSensor === 'all' ? 3 : 1;
                 const params = new URLSearchParams({
                     page: currentPage,
-                    limit: itemsPerPage,
+                    limit: itemsPerPage * limitMultiplier,
                     sensorName: selectedSensor,
                 });
 
@@ -41,9 +42,58 @@ export const SensorHistory = () => {
                 const json = await res.json();
                 
                 if (json.data) {
-                    setData(json.data);
-                    setTotalRecords(json.total);
-                    setTotalPages(json.totalPages);
+                    let processedData = json.data;
+
+                    if (selectedSensor === 'all') {
+                        // Group EAV rows by exact timestamp to show 3 values on 1 row
+                        const grouped = processedData.reduce((acc, curr) => {
+                            const timeStr = new Date(curr.date).toLocaleString('vi-VN');
+                            if (!acc[timeStr]) {
+                                acc[timeStr] = {
+                                    ID: curr.ID, 
+                                    date: curr.date,
+                                    timeStr: timeStr,
+                                    temperature: '--',
+                                    humidity: '--',
+                                    light: '--'
+                                };
+                            }
+                            
+                            // Keep the smallest ID visually
+                            if (curr.ID < acc[timeStr].ID) acc[timeStr].ID = curr.ID;
+
+                            const sName = curr.sensor ? curr.sensor.name : '';
+                            if (sName === 'temperature') acc[timeStr].temperature = curr.value;
+                            if (sName === 'humidity') acc[timeStr].humidity = curr.value;
+                            if (sName === 'light') acc[timeStr].light = curr.value;
+
+                            return acc;
+                        }, {});
+                        
+                        processedData = Object.values(grouped);
+                        setData(processedData);
+                        
+                        // Because the backend paginates raw rows, we adjust TotalPages roughly for groups
+                        setTotalPages(Math.ceil(json.total / (itemsPerPage * 3)));
+                        setTotalRecords(Math.ceil(json.total / 3));
+                    } else {
+                        // Single sensor view, just map them neatly
+                        processedData = processedData.map(curr => {
+                            const timeStr = new Date(curr.date).toLocaleString('vi-VN');
+                            const sName = curr.sensor ? curr.sensor.name : '';
+                            return {
+                                ID: curr.ID,
+                                date: curr.date,
+                                timeStr: timeStr,
+                                temperature: sName === 'temperature' ? curr.value : '--',
+                                humidity: sName === 'humidity' ? curr.value : '--',
+                                light: sName === 'light' ? curr.value : '--'
+                            };
+                        });
+                        setData(processedData);
+                        setTotalRecords(json.total);
+                        setTotalPages(json.totalPages);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch sensor history", err);
@@ -192,28 +242,26 @@ export const SensorHistory = () => {
                     <div className="divide-y divide-white/5">
                         {data.length > 0 ? (
                             data.map((item) => {
-                                const sName = item.sensor ? item.sensor.name : 'Unknown';
-                                const timeStr = new Date(item.date).toLocaleString('vi-VN');
                                 return (
                                 <motion.div key={item.ID} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-12 gap-4 p-4 hover:bg-white/5 transition-colors text-sm text-white/80">
                                     <div className="col-span-1 font-mono text-xs text-white/40 truncate">#{item.ID}</div>
-                                    <div className="col-span-3 font-mono">{timeStr}</div>
+                                    <div className="col-span-3 font-mono">{item.timeStr}</div>
 
                                     {(selectedSensor === 'all' || selectedSensor === 'temperature') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} text-orange-300`}>
-                                            {sName === 'temperature' ? `${item.value}°C` : '--'}
+                                            {item.temperature !== '--' ? `${item.temperature}°C` : '--'}
                                         </div>
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'humidity') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-cyan-300`}>
-                                            {sName === 'humidity' ? `${item.value}%` : '--'}
+                                            {item.humidity !== '--' ? `${item.humidity}%` : '--'}
                                         </div>
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'light') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-yellow-300`}>
-                                            {sName === 'light' ? `${item.value} Lx` : '--'}
+                                            {item.light !== '--' ? `${item.light} Lx` : '--'}
                                         </div>
                                     )}
                                 </motion.div>

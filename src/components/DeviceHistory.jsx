@@ -26,10 +26,8 @@ export const DeviceHistory = () => {
                     limit: itemsPerPage,
                 });
                 
-                // Construct keyword string from SearchTerm OR Device Dropdown
-                let keyword = searchTerm;
-                if (!keyword && selectedDevice !== 'all') keyword = selectedDevice;
-                if (keyword) params.append('keyword', keyword);
+                if (selectedDevice !== 'all') params.append('deviceName', selectedDevice);
+                if (searchTerm) params.append('keyword', searchTerm);
 
                 if (startDate) params.append('fromDate', new Date(startDate).toISOString());
                 if (endDate) params.append('toDate', new Date(endDate).toISOString());
@@ -188,11 +186,22 @@ export const DeviceHistory = () => {
                                         </div>
 
                                         <div className="col-span-3">
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider ${item.action === 'ON'
-                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold tracking-wider ${
+                                                item.status === 'pending'
+                                                    ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
+                                                    : item.status === 'failed'
+                                                        ? 'bg-red-600/30 text-red-500 border border-red-600/50'
+                                                        : item.action === 'ON'
+                                                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                                                            : 'bg-white/10 text-white/50 border border-white/20'
                                                 }`}>
-                                                {item.action === 'ON' ? 'ĐANG BẬT' : 'ĐÃ TẮT'}
+                                                {item.status === 'pending'
+                                                    ? `ĐANG CHỜ ${item.action}`
+                                                    : item.status === 'failed'
+                                                        ? `LỖI ${item.action}`
+                                                        : item.action === 'ON'
+                                                            ? 'ĐÃ BẬT'
+                                                            : 'ĐÃ TẮT'}
                                             </span>
                                         </div>
 

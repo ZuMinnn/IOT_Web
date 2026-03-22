@@ -8,7 +8,5 @@ router.get('/status', deviceController.getStatus);
 // POST /api/device/control - user toggles a device, logs to DeviceAction, publishes MQTT
 router.post('/control', deviceController.control);
 
-// GET /api/device-actions - paginated action log, search by keyword + date range
-router.get('-actions', deviceController.getHistory);
 
 module.exports = router;

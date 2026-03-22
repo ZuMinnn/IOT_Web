@@ -31,9 +31,10 @@ const getHistory = async (req, res, next) => {
         const page     = parseInt(req.query.page)  || 1;
         const limit    = parseInt(req.query.limit) || 10;
         const offset   = (page - 1) * limit;
-        const keyword  = req.query.keyword  || '';
-        const fromDate = req.query.fromDate || null;
-        const toDate   = req.query.toDate   || null;
+        const keyword    = req.query.keyword  || '';
+        const deviceName = req.query.deviceName || '';
+        const fromDate   = req.query.fromDate || null;
+        const toDate     = req.query.toDate   || null;
 
         const where = {};
         if (fromDate || toDate) {
@@ -48,9 +49,14 @@ const getHistory = async (req, res, next) => {
             ];
         }
 
+        const deviceWhere = {};
+        if (deviceName) {
+            deviceWhere.name = deviceName;
+        }
+
         const { count, rows } = await DeviceAction.findAndCountAll({
             where,
-            include: [{ model: Device, as: 'device', attributes: ['name'] }],
+            include: [{ model: Device, as: 'device', attributes: ['name'], where: deviceName ? deviceWhere : undefined }],
             order:  [['date', 'DESC']],
             limit,
             offset,
@@ -84,13 +90,29 @@ const control = async (req, res, next) => {
         const log = await DeviceAction.create({
             deviceID: device.ID,
             action,
-            status:   'success',
+            status:   'pending', // Lưu trạng thái chờ
             running:  action === 'ON' ? 1 : 0,
             date:     new Date(),
             createAt: new Date(),
         });
 
         publishDeviceControl(deviceName, action);
+
+        // Hẹn giờ check mạch phần cứng (Time out 5 giây)
+        setTimeout(async () => {
+            try {
+                const checkLog = await DeviceAction.findByPk(log.ID);
+                if (checkLog && checkLog.status === 'pending') {
+                    // Nếu 5s sau vẫn chờ -> Đánh lỗi
+                    await checkLog.update({ status: 'failed', running: 0 });
+                    const { pushDeviceStatus } = require('../services/websocketService');
+                    // Bắn Socket về Frontend để tắt vòng xoay
+                    pushDeviceStatus({ device: deviceName, error: 'timeout' });
+                }
+            } catch (err) {
+                console.error("Lỗi Timeout check", err);
+            }
+        }, 5000);
 
         res.json({ success: true, log });
     } catch (err) {
