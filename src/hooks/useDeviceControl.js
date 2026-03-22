@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
-/**
- * Hook for managing device states
- */
+const API_URL = 'http://localhost:3001/api/device';
+const WS_URL = 'ws://localhost:3001';
+
 export const useDeviceControl = () => {
     const [devices, setDevices] = useState({
         fan: false,
@@ -16,54 +16,80 @@ export const useDeviceControl = () => {
         light: false,
     });
 
-    const [deviceHistory, setDeviceHistory] = useState([]);
-    const lastIdRef = useRef(0);
+    // 1. Fetch initial status
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await fetch(`${API_URL}/status`);
+                const data = await res.json();
+                setDevices({
+                    fan: !!data.fan,
+                    airConditioner: !!data.airConditioner,
+                    light: !!data.light,
+                });
+            } catch (err) {
+                console.error('Failed to fetch initial device status', err);
+            }
+        };
+        fetchStatus();
+    }, []);
 
-    const toggleDevice = (deviceName) => {
-        const targetState = !devices[deviceName];
+    // 2. WebSocket listener for device status updates from backend
+    useEffect(() => {
+        const ws = new WebSocket(WS_URL);
 
-        // Set loading state
-        setLoadingStates((prev) => ({
-            ...prev,
-            [deviceName]: true,
-        }));
+        ws.onopen = () => console.log('WebSocket Connected (Devices)');
+        
+        ws.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.type === 'device' && msg.payload) {
+                    const { device, is_on } = msg.payload;
+                    setDevices((prev) => ({
+                        ...prev,
+                        [device]: !!is_on
+                    }));
+                }
+            } catch (err) {}
+        };
 
-        // Simulate 1 second delay before actually toggling
-        setTimeout(() => {
-            setDevices((prev) => ({
-                ...prev,
-                [deviceName]: targetState,
-            }));
+        ws.onclose = () => console.log('WebSocket Disconnected (Devices)');
 
-            // Log to history
-            const newLog = {
-                id: ++lastIdRef.current,
-                device: deviceName,
-                action: targetState ? 'ON' : 'OFF',
-                time: new Date().toLocaleString('vi-VN', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: false
-                })
-            };
+        return () => {
+            if (ws.readyState === 1) ws.close();
+        };
+    }, []);
 
-            setDeviceHistory(prevHistory => [newLog, ...prevHistory]);
+    // 3. Toggle device action
+    const toggleDevice = async (deviceName) => {
+        const targetAction = !devices[deviceName] ? 'ON' : 'OFF';
 
-            setLoadingStates((prev) => ({
-                ...prev,
-                [deviceName]: false,
-            }));
-        }, 1000);
+        setLoadingStates((prev) => ({ ...prev, [deviceName]: true }));
+
+        try {
+            const res = await fetch(`${API_URL}/control`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device: deviceName, action: targetAction })
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Optimistic UI update
+                setDevices((prev) => ({ ...prev, [deviceName]: targetAction === 'ON' }));
+            } else {
+                console.error('Failed to toggle device:', data.error);
+            }
+        } catch (err) {
+            console.error('API Error toggling device', err);
+        } finally {
+            setLoadingStates((prev) => ({ ...prev, [deviceName]: false }));
+        }
     };
 
     return {
         devices,
         loadingStates,
-        deviceHistory,
         toggleDevice,
     };
 };

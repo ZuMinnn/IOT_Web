@@ -1,0 +1,507 @@
+﻿HỌC VIỆN CÔNG NGHỆ BƯU CHÍNH VIỄN THÔNG
+ 								
+
+BÁO CÁO PHÁT TRIỂN ỨNG DỤNG IOT
+BÀI THỰC HÀNH 1
+Giảng viên 
+Sinh viên: Nguyễn Quốc Uy
+: Trần Minh Vũ    	MSV	 : B22DCPT311
+			
+
+
+
+								
+	Hà Nội - 2025
+	
+
+
+
+Mục lục
+Phần I:	Thiết kế ứng dụng	2
+1.	Trang chủ dashboard	2
+2.	Trang lịch sử cảm biến	4
+3.	Trang lịch sử hoạt động thiết bị	4
+4.	Trang Profile	5
+Phần II:	Sơ đồ tuần tự	6
+1.	Đọc cảm biến và lưu vào cơ sở dữ liệu	6
+2.	Xem Dashboard + đọc cảm biến + xử lý thiết bị	7
+3.	Điều khiển thiết bị	11
+4.	Tìm kiếm trong trang lịch sử cảm biến	15
+5.	Tìm kiếm, sắp xếp giá trị của thiết bị	20
+Phần III:	Thiết kế cơ sở dữ liệu	24
+1.	Sơ đồ cơ sở dữ liệu	24
+
+
+
+
+
+    
+
+Phần I: Thiết kế ứng dụng 
+1. Trang chủ dashboard
+
+Hình 1: Trang chủ Dashboard
+
+Hình 2: Giao diện menu
+
+2. Trang lịch sử cảm biến
+
+Hình 3: Trang lịch sử cảm biến
+3. Trang lịch sử hoạt động thiết bị
+
+Hình 4: Trang lịch sử hoạt động thiết bị
+4. Trang Profile
+
+Hình 5: Trang Profile
+Phần II: Sơ đồ tuần tự
+1. Đọc cảm biến và lưu vào cơ sở dữ liệu 
+Mô tả:
+Luồng: Thiết bị gửi dữ liệu cảm biến (Publish sensor data) 
+Bước 1: Thiết bị đọc dữ liệu từ cảm biến
+Hardware đọc dữ liệu từ 2 cảm biến
+* Cảm biến nhiệt độ/ độ ẩm.
+* Cảm biến ánh sáng.
+Bước 2: Thiết bị publish dữ liệu cảm biến
+* Tác nhân: Hardware
+* Giao thức: MQTT
+* Hành động: Gửi dữ liệu đo được lên MQTT Broker
+Topic sử dụng: iot/sensor/env
+Bước 3: Backend API subcribe và tiếp nhận dữ liệu
+* Tác nhân: Backend API
+* Cơ chế: MQTT Subcriber
+Backend thực hiện subcribe topic khi có message mới callback onMessage() được kích hoạt, backend parse payload và tách dữ liệu từng cảm biến
+Bước 4: Backend API xử lý và lưu dữ liệu vào Database
+Sử dụng Internal API  để lưu dữ liệu vào bảng SensorData
+Bước 5: Database phản hồi kết quả lưu dữ liệu
+
+2. Xem Dashboard + đọc cảm biến + xử lý thiết bị
+
+
+Mô tả Luồng:
+ Bước 1: Người dùng mở Dashboard
+* Tác nhân: User
+* Hành động: Truy cập trang Dashboard thông qua trình duyệt
+
+Kết quả: Frontend được khởi tạo
+
+ Bước 2: Frontend gọi API lấy dữ liệu mới nhất
+
+* Tác nhân: Frontend
+
+* API sử dụng: GET /api/sensors/latest
+
+
+Mục đích:
+
+Lấy giá trị cảm biến mới nhất của: Nhiệt độ, độ ẩm, ánh sáng
+
+Bước 3: Backend truy vấn dữ liệu từ Database
+
+* Tác nhân: Backend API
+
+* Hàm xử lý nội bộ: queryLatestData()
+
+Backend thực hiện truy vấn dữ liệu mới nhất từ bảng SensorData
+
+
+Bước 4: Backend trả dữ liệu ban đầu cho Frontend
+
+Tác nhân: Backend API
+
+==> Frontend hiển thị dữ liệu ban đầu lên Dashboard.
+
+Bước 5: Frontend thiết lập kết nối WebSocket
+
+* Tác nhân: Frontend
+
+Hành động:
+
+Mở kết nối WebSocket tới Backend
+
+
+ Bước 6: Backend chấp nhận kết nối WebSocket
+
+* Tác nhân: Backend API
+
+Kết quả:
+
+Kết nối realtime giữa Frontend và Backend được thiết lập thành công
+
+Bước 7: Thiết bị publish dữ liệu cảm biến
+
+* Tác nhân: Hardware
+
+* Giao thức: MQTT
+
+Cơ chế: Định kỳ hoặc khi giá trị thay đổi
+
+Topic: iot/sensor/env
+
+Bước 8: Backend nhận dữ liệu từ MQTT Broker
+
+* Tác nhân: Backend API
+
+Hành động:
+
+Subscribe topic iot/sensor/env
+
+Callback onMessage() được kích hoạt
+
+Bước 9: Backend lưu dữ liệu vào Database
+
+* Tác nhân: Backend API
+
+* Hàm xử lý nội bộ: saveSensorData()
+
+Backend tách payload và lưu 3 bản ghi tương ứng vào bảng SensorData.
+
+ Bước 10: Database xác nhận lưu thành công
+
+Tác nhân: Database
+
+Phản hồi: OK
+
+Bước 11: Backend đẩy dữ liệu realtime cho Frontend
+
+* Tác nhân: Backend API
+
+* Cơ chế: WebSocket
+
+pushSensorData(sensorData)
+
+
+Dữ liệu được đẩy ngay sau khi Backend xử lý xong message MQTT.
+
+Bước 12: Frontend cập nhật giao diện
+
+* Tác nhân: Frontend
+
+Hành động: Cập nhật biểu đồ, Cập nhật chỉ số realtime
+
+3. Điều khiển thiết bị
+
+Luồng phụ lấy thông tin bản ghi gần nhất trạng thái thiết bị:
+Bước 1: Người dùng truy cập vào bảng điều khiển dashboard
+Bước 2: Frontend cập nhật dữ liệu lần đầu khi load trang: bằng cách gọi 
+Api: Get /api/device/status
+Bước 3 Backend truy vấn trong bảng DeviceAction 
+Bước 4 : Database trả kết quả truy vấn cho Backend
+Bước 5: Backend trả kết quả cho Frontend
+Bước 6: Frontend cập nhật UI State lần đầu cho user
+
+
+Mô tả luồng: 
+Bước 1: Người dùng thao tác trên giao diện
+
+* Tác nhân: User
+
+* Thành phần: Frontend (React Dashboard)
+
+Hành động: Người dùng nhấn nút điều khiển thiết bị (ON / OFF).
+
+Bước 2: Frontend gửi yêu cầu điều khiển lên Backend
+
+* Giao thức: HTTP (REST API)
+
+* Phương thức: POST
+
+Endpoint: POST /api/device/control
+
+Bước 3: Backend ghi log hành động điều khiển
+
+* Thành phần: Backend API (NodeJS / Express)
+
+Hành động: Backend gọi hàm saveControlLog() để lưu lịch sử thao tác người dùng ( bảng DeviceAction)
+
+Bước 4: Backend publish lệnh điều khiển lên MQTT Broker
+
+* Giao thức: MQTT
+
+Topic: iot/device/control
+
+Bước 5: MQTT Broker chuyển lệnh đến thiết bị
+
+* Thành phần: MQTT Broker
+
+Hành động: Broker deliver message đến các client đang subscribe topic 
+
+Bước 6: Thiết bị nhận và thực thi lệnh
+
+* Thành phần: Hardware 
+
+Hành động: 
+* Nhận message MQTT
+
+* Phân tích payload
+
+* Thực hiện hành động
+
+
+
+Bước 7: Thiết bị publish trạng thái mới
+
+* Giao thức: MQTT
+
+Topic: iot/device/status
+
+Mục đích: Xác nhận để hệ thống biết thiết bị đã thực thi thành công.
+
+Bước 8: Backend nhận trạng thái từ MQTT
+
+* Thành phần: Backend API
+
+Hành động:
+
+Subscribe topic iot/device/status
+
+Hàm onMessage() được gọi khi có message mới
+
+Bước 9: Backend cập nhật trạng thái thiết bị vào Database
+
+Hành động: Backend gọi hàm updateDeviceStatus() để:
+
+Cập nhật trạng thái hiện tại của thiết bị
+
+Đồng bộ trạng thái thực tế với hệ thống
+
+Kết quả: Database trả về OK
+
+Bước 10: Backend đẩy trạng thái mới lên Frontend
+
+* Giao thức: WebSocket
+
+Hành động: Backend push trạng thái thiết bị mới cho client đang kết nối realtime.
+
+Bước 11: Frontend cập nhật giao diện
+
+Thành phần: Frontend (React Dashboard)
+
+Hành động:
+
+Nhận message WebSocket
+
+Cập nhật UI (đèn ON/OFF, trạng thái thiết bị)
+4. Tìm kiếm trong trang lịch sử cảm biến
+
+
+Mô tả luồng: 
+Bước 1: Người dùng mở màn hình lịch sử cảm biến
+* Tác nhân: User
+* Thành phần: Frontend (React UI)
+Hành động:
+Người dùng chọn chức năng "Lịch sử cảm biến" trên giao diện.
+Bước 2: Frontend yêu cầu dữ liệu lịch sử mặc địn
+* Giao thức: HTTP (REST API)
+* Phương thức: GET
+Endpoint: GET /api/sensors/history
+ Mục đích: tải dữ liệu ban đầu khi mở trang
+
+Bước 3: Backend truy vấn dữ liệu từ Database
+* Thành phần: Backend API (NodeJS / Express)
+Hành động:
+Bước 4: Backend trả dữ liệu lịch sử cho Frontend
+Bước 5: Frontend hiển thị bảng lịch sử
+* Thành phần: Frontend
+Hành động: Hiển thị danh sách lịch sử cảm biến dưới dạng bảng.
+LUỒNG TÌM KIẾM THEO GIÁ TRỊ / TÊN CẢM BIẾN
+Bước 6: Người dùng nhập từ khóa tìm kiếm
+
+Hành động: Nhập:  giá trị đo
+Bước 7: Frontend gửi yêu cầu tìm kiếm
+Endpoint: GET /api/sensors/history
+
+Bước 8: Backend xử lý tìm kiếm
+
+
+Bước 9: Backend trả dữ liệu phù hợp
+
+Bước 10: Frontend cập nhật bảng kết quả
+
+Hiển thị dữ liệu đã lọc theo từ khóa.
+
+LUỒNG LỌC THEO KHOẢNG THỜI GIAN
+Bước 11: Người dùng chọn khoảng thời gian
+Chọn: From date - To date
+Bước 12: Frontend gửi yêu cầu lọc theo ngày
+Endpoint: GET /api/sensors/history
+Bước 13: Backend truy vấn dữ liệu theo ngày
+Bước 14: Backend trả dữ liệu đã lọc
+Bước 15: Frontend cập nhật bảng
+Hiển thị dữ liệu theo khoảng thời gian đã chọn.
+
+LUỒNG TÌM KIẾM KẾT HỢP (KEYWORD + DATE RANGE)
+Bước 16: Người dùng nhập đầy đủ điều kiện
+Nhập từ khóa
+Chọn khoảng ngày
+Nhấn "Tìm kiếm"
+Bước 17: Frontend gửi yêu cầu tìm kiếm kết hợp
+Endpoint:GET /api/sensors/history
+
+
+
+Bước 18: Backend xử lý truy vấn kết hợp
+
+Bước 19: Backend trả kết quả cuối cùng
+Dữ liệu: finalResult
+
+Bước 20: Frontend hiển thị kết quả
+
+Cập nhật bảng lịch sử cảm biến theo đúng điều kiện tìm kiếm.
+5. Tìm kiếm, sắp xếp giá trị của thiết bị
+
+Mô tả luồng: 
+Bước 1: Mở trang lịch sử hoạt động
+
+* Tác nhân: User
+
+Hành động: Click vào menu "Lịch sử hoạt động"
+
+Bước 2: Frontend gọi API lấy dữ liệu mặc định
+
+Frontend → Backend
+
+GET /api/device-actions
+
+
+Tham số mặc định:
+
+{
+  "page": 1,
+  "limit": 10
+}
+
+Bước 3: Backend xử lý và truy vấn Database
+
+Backend API :Nhận request , Validate tham số
+
+Gọi hàm nội bộ:
+
+getDeviceActionHistory(params)
+
+
+Database:
+
+Truy vấn bảng Device và DeviceAction
+
+Sắp xếp theo thời gian giảm dần
+
+Phân trang dữ liệu
+
+Bước 4: Backend trả dữ liệu về Frontend
+
+Backend → Frontend
+
+200 OK
+
+{
+  "data": deviceActionHistory,
+  "total": totalRecords
+}
+
+Bước 5: Frontend hiển thị bảng lịch sử
+
+Frontend:
+
+Render bảng danh sách
+
+Hiển thị: tên thiết bị, hành động, trạng thái, thời gian
+
+Bước 6: Người dùng nhập từ khóa tìm kiếm
+
+* Tác nhân: User
+
+Hành động:
+
+Nhập keyword (tên thiết bị / action / status)
+
+
+Bước 7: Frontend gọi API tìm kiếm
+
+Frontend → Backend
+
+GET /api/device-actions?keyword=abc&page=1
+
+Bước 8: Backend xử lý tìm kiếm
+
+Backend API: Nhận keyword
+
+Gọi hàm:
+
+searchDeviceActions(keyword, page)
+
+
+
+
+Bước 9: Trả kết quả & cập nhật giao diện
+
+Backend → Frontend: matchedData
+
+Frontend: cập nhật lại bảng dữ liệu
+
+Bước 10: Người dùng chọn khoảng ngày
+
+Chọn From date và To date
+
+Bước 11: Frontend gọi API lọc theo ngày
+GET /api/device-actions?fromDate=2024-01-01&toDate=2024-01-31&page=1
+
+Bước 12: Backend xử lý lọc
+
+Gọi hàm:
+
+filterDeviceActionsByDate(fromDate, toDate, page)
+
+
+Database lọc theo DeviceAction.date
+
+Bước 13: Trả kết quả & hiển thị
+
+Backend trả filteredData
+
+Frontend cập nhật bảng
+
+Bước 14: Người dùng nhập keyword + chọn ngày
+
+User nhập: Keyword ,From date-To date
+
+Bước 15: Frontend gọi API kết hợp
+GET /api/device-actions?keyword=abc&fromDate=2024-01-01&toDate=2024-01-31&page=1
+
+Bước 16: Backend xử lý kết hợp
+
+Gọi hàm:
+
+searchAndFilterDeviceActions(params)
+
+
+Database: Tìm theo keyword, Đồng thời lọc theo khoảng ngày
+
+Bước 17: Trả kết quả cuối
+
+Backend trả finalResult
+
+Frontend hiển thị kết quả cho người dùng
+Phần III: Thiết kế cơ sở dữ liệu
+
+1. Sơ đồ cơ sở dữ liệu
+Entity Relationship Diagram (ERD)
+
+    
+    
+    
+
+CộtKiểuÝ nghĩa    IDintegerKhóa chính, định danh duy nhất cho mỗi thiết bị    namevarcharTên thiết bị     createAtdateNgày tạo thiết bị trong hệ thống    
+CộtKiểuÝ nghĩa    IDintegerKhóa chính của bản ghi hành động    deviceIDintegerKhóa ngoại → Device.ID    actionvarcharHành động được gửi (ON / OFF / SET_VALUE...)    statusvarcharTrạng thái sau khi thực hiện (SUCCESS / FAIL)    runningintegerTrạng thái thực thi (0: chưa chạy, 1: đang chạy, 2: xong)    datedateThời điểm gửi lệnh    createAtdateThời điểm lưu bản ghi    
+
+
+
+
+
+
+
+
+CộtKiểuÝ nghĩa    IDintegerKhóa chính    namevarcharTên cảm biến (VD: Nhiệt độ, Độ ẩm, Ánh sáng)    createAtdateNgày thêm cảm biến    
+
+CộtKiểuÝ nghĩa    IDintegerKhóa chính    SensorIDintegerKhóa ngoại → Sensor.ID    valuedoubleGiá trị đo được     datedateThời điểm đo    
+2
+

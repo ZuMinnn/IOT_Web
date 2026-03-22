@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 export const Sensor3DBar = ({
     title,
     value,
+    displayValue,
     unit,
     min = 0,
     max = 100,
@@ -16,8 +17,9 @@ export const Sensor3DBar = ({
     glow,
     children
 }) => {
-    // Calculate fill percentage
-    const percentage = Math.min(Math.max(((value - min) / (max - min)) * 100, 0), 100);
+    // Calculate fill percentage based on numeric value, fallback to 0 if value is string
+    const numericValue = typeof value === 'number' ? value : 0;
+    const percentage = Math.min(Math.max(((numericValue - min) / (max - min)) * 100, 0), 100);
 
     return (
         <motion.div
@@ -78,8 +80,10 @@ export const Sensor3DBar = ({
 
                 {/* Value Display */}
                 <div className="flex items-baseline justify-center gap-1 mb-1">
-                    <span className="text-2xl font-bold text-white text-3d-light">{value}</span>
-                    <span className="text-lg text-white/80 font-semibold">{unit}</span>
+                    <span className="text-2xl font-bold text-white text-3d-light">
+                        {displayValue !== undefined ? displayValue : value}
+                    </span>
+                    {unit && <span className="text-lg text-white/80 font-semibold">{unit}</span>}
                 </div>
 
                 {/* Status */}

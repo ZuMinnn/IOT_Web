@@ -9,12 +9,13 @@ import { SensorChart } from './components/SensorChart';
 import { SensorHistory } from './components/SensorHistory';
 import { DeviceHistory } from './components/DeviceHistory';
 import { Profile } from './components/Profile';
-import { Activity, Fan, Wind, Lightbulb, Menu, X, Home, User, Database, ClipboardList } from 'lucide-react';
+import { Settings } from './components/Settings';
+import { Activity, Fan, Wind, Lightbulb, Menu, X, Home, User, Database, ClipboardList, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const { sensorData, history } = useSensorData();
-  const { devices, loadingStates, toggleDevice, deviceHistory } = useDeviceControl();
+  const { devices, loadingStates, toggleDevice } = useDeviceControl();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
 
@@ -24,7 +25,6 @@ function App() {
     setCurrentView(view);
     closeMenu();
   };
-
 
   return (
     <div className="h-screen p-2 lg:p-3 overflow-hidden bg-[#0f172a]">
@@ -74,12 +74,13 @@ function App() {
 
                   {/* Navigation Links */}
                   <nav className="flex-1 space-y-2">
-                    {[
-                      { icon: Home, label: 'Trang Chủ', active: currentView === 'dashboard', view: 'dashboard' },
-                      { icon: Database, label: 'Dữ liệu cảm biến', active: currentView === 'history', view: 'history' },
-                      { icon: ClipboardList, label: 'Lịch sử hoạt động', active: currentView === 'device_history', view: 'device_history' },
-                      { icon: User, label: 'Profile', active: currentView === 'profile', view: 'profile' },
-                    ].map((item, index) => (
+                      {[
+                        { icon: Home, label: 'Trang Chủ', active: currentView === 'dashboard', view: 'dashboard' },
+                        { icon: Database, label: 'Dữ liệu cảm biến', active: currentView === 'history', view: 'history' },
+                        { icon: ClipboardList, label: 'Lịch sử hoạt động', active: currentView === 'device_history', view: 'device_history' },
+                        { icon: User, label: 'Profile', active: currentView === 'profile', view: 'profile' },
+                        { icon: SettingsIcon, label: 'Cài đặt', active: currentView === 'settings', view: 'settings' },
+                      ].map((item, index) => (
                       <motion.button
                         key={index}
                         whileHover={{ x: 5 }}
@@ -95,7 +96,6 @@ function App() {
                     ))}
                   </nav>
 
-                  {/* Footer Action removed */}
                 </div>
               </motion.div>
             </>
@@ -188,7 +188,7 @@ function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="h-full"
               >
-                <SensorHistory history={history} />
+                <SensorHistory />
               </motion.div>
             ) : currentView === 'profile' ? (
               <motion.div
@@ -200,6 +200,16 @@ function App() {
               >
                 <Profile />
               </motion.div>
+            ) : currentView === 'settings' ? (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="h-full"
+              >
+                <Settings />
+              </motion.div>
             ) : (
               <motion.div
                 key="device_history"
@@ -208,7 +218,7 @@ function App() {
                 exit={{ opacity: 0, x: -20 }}
                 className="h-full"
               >
-                <DeviceHistory history={deviceHistory} />
+                <DeviceHistory />
               </motion.div>
             )}
           </AnimatePresence>

@@ -1,23 +1,66 @@
-import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Activity, Droplets, Sun, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Activity, Droplets, Sun, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const SensorHistory = ({ history }) => {
+const API_URL = 'http://localhost:3001/api/sensors';
+
+export const SensorHistory = () => {
+    const [data, setData] = useState([]);
+    const [totalRecords, setTotalRecords] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [selectedSensor, setSelectedSensor] = useState('all');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: 'id', direction: 'asc' });
+    const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Handle Sorting
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: itemsPerPage,
+                    sensorName: selectedSensor,
+                });
+
+                let apiSortKey = sortConfig.key;
+                if (sortConfig.key === 'time') apiSortKey = 'date';
+                if (['temperature', 'humidity', 'light'].includes(sortConfig.key)) apiSortKey = 'value';
+                
+                params.append('sortBy', apiSortKey);
+                params.append('sortDir', sortConfig.direction);
+
+                if (searchTerm) params.append('keyword', searchTerm);
+                if (startDate) params.append('startDate', new Date(startDate).toISOString());
+                if (endDate) params.append('endDate', new Date(endDate).toISOString());
+
+                const res = await fetch(`${API_URL}/history?${params}`);
+                const json = await res.json();
+                
+                if (json.data) {
+                    setData(json.data);
+                    setTotalRecords(json.total);
+                    setTotalPages(json.totalPages);
+                }
+            } catch (err) {
+                console.error("Failed to fetch sensor history", err);
+            }
+        };
+
+        const t = setTimeout(fetchData, 300);
+        return () => clearTimeout(t);
+    }, [currentPage, itemsPerPage, selectedSensor, startDate, endDate, sortConfig, searchTerm]);
+
     const handleSort = (key) => {
         let direction = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
         setSortConfig({ key, direction });
+        setCurrentPage(1);
     };
 
     const getSortIcon = (key) => {
@@ -25,71 +68,8 @@ export const SensorHistory = ({ history }) => {
         return sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
     };
 
-    // Process Data (Filter -> Sort -> Paginate)
-    const processedHistory = useMemo(() => {
-        let data = [...history];
-
-        // 1. Filter by Time Range
-        // Note: Sensor "filtering" is visual (hiding columns), not row filtering, as requested.
-        if (searchTerm) {
-            const lowerTerm = searchTerm.toLowerCase();
-            data = data.filter(item =>
-                item.temperature?.toString().includes(lowerTerm) ||
-                item.humidity?.toString().includes(lowerTerm) ||
-                item.light?.toString().includes(lowerTerm) ||
-                item.id?.toString().includes(lowerTerm)
-            );
-        }
-
-        // 1. Filter by Time Range
-        // Note: Sensor "filtering" is visual (hiding columns), not row filtering, as requested.
-        if (startDate || endDate) {
-            data = data.filter((item) => {
-                const itemTime = item.timestamp;
-                if (!itemTime) return true;
-
-                let isValid = true;
-                if (startDate) {
-                    isValid = isValid && itemTime >= new Date(startDate);
-                }
-                if (endDate) {
-                    isValid = isValid && itemTime <= new Date(endDate);
-                }
-                return isValid;
-            });
-        }
-
-        // 2. Sort
-        data.sort((a, b) => {
-            let aValue = a[sortConfig.key];
-            let bValue = b[sortConfig.key];
-
-            if (sortConfig.key === 'time') {
-                aValue = a.timestamp;
-                bValue = b.timestamp;
-            }
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'asc' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'asc' ? 1 : -1;
-            }
-            return 0;
-        });
-
-        return data;
-    }, [history, startDate, endDate, sortConfig, searchTerm]);
-
-    // Pagination Logic
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = processedHistory.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(processedHistory.length / itemsPerPage);
-
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-    // Sensor Tabs Configuration
     const sensorTabs = [
         { id: 'all', label: 'Tất cả', icon: Activity, color: 'text-white' },
         { id: 'temperature', label: 'Nhiệt độ', icon: Sun, color: 'text-orange-400' },
@@ -99,7 +79,6 @@ export const SensorHistory = ({ history }) => {
 
     return (
         <div className="h-full flex flex-col p-4 space-y-4">
-            {/* Header & Controls */}
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -110,18 +89,17 @@ export const SensorHistory = ({ history }) => {
                         <Activity className="text-cyan-400" />
                         Lịch Sử Cảm Biến
                     </h2>
-                    <p className="text-white/50 text-xs mt-1">Theo dõi biến động môi trường</p>
+                    <p className="text-white/50 text-xs mt-1">Dữ liệu từ Database (EAV Model)</p>
                 </div>
 
                 <div className="flex flex-wrap gap-4 w-full xl:w-auto items-end">
-                    {/* Sensor Tabs */}
                     <div className="flex flex-col gap-1 w-full sm:w-auto">
                         <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Loại Cảm Biến</span>
                         <div className="flex bg-black/20 p-1 rounded-lg border border-white/10">
                             {sensorTabs.map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setSelectedSensor(tab.id)}
+                                    onClick={() => { setSelectedSensor(tab.id); setCurrentPage(1); }}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${selectedSensor === tab.id
                                         ? 'bg-white/10 text-white shadow-sm ring-1 ring-white/20'
                                         : 'text-white/50 hover:text-white hover:bg-white/5'
@@ -134,15 +112,27 @@ export const SensorHistory = ({ history }) => {
                         </div>
                     </div>
 
-                    {/* Time Range Filters */}
                     <div className="flex gap-2 flex-1 min-w-[300px]">
                         <div className="flex flex-col gap-1 flex-1">
-                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Theo ngày</span>
+                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Từ ngày</span>
                             <div className="relative">
                                 <input
                                     type="datetime-local"
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
+                                    style={{ colorScheme: 'dark' }}
+                                    step="1"
+                                    className="w-full pl-3 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1 flex-1">
+                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Đến ngày</span>
+                            <div className="relative">
+                                <input
+                                    type="datetime-local"
+                                    value={endDate}
+                                    onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
                                     style={{ colorScheme: 'dark' }}
                                     step="1"
                                     className="w-full pl-3 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
@@ -156,32 +146,17 @@ export const SensorHistory = ({ history }) => {
                                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" size={14} />
                                 <input
                                     type="text"
-                                    placeholder="Giá trị..."
+                                    placeholder="Giá trị, ID..."
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                                     className="w-full pl-8 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-white/20"
                                 />
                             </div>
                         </div>
-
-                        {/* <div className="flex flex-col gap-1 flex-1">
-                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Đến ngày</span>
-                            <div className="relative">
-                                <input
-                                    type="datetime-local"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    style={{ colorScheme: 'dark' }}
-                                    step="1"
-                                    className="w-full pl-3 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
-                                />
-                            </div>
-                        </div> */}
                     </div>
                 </div>
             </motion.div>
 
-            {/* Data Table */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -189,139 +164,91 @@ export const SensorHistory = ({ history }) => {
                 className="flex-1 overflow-auto bg-white/5 border border-white/10 rounded-xl backdrop-blur-md relative"
             >
                 <div className="min-w-[700px]">
-                    {/* Table Header */}
                     <div className="grid grid-cols-12 gap-4 p-4 border-b border-white/10 bg-white/5 sticky top-0 backdrop-blur-xl z-10 font-medium text-sm text-white/70 select-none">
-
-                        {/* ID Column */}
-                        <div
-                            onClick={() => handleSort('id')}
-                            className="col-span-1 flex items-center gap-2 cursor-pointer hover:text-white transition-colors group"
-                        >
-                            ID {getSortIcon('id')}
+                        <div onClick={() => handleSort('ID')} className="col-span-1 flex items-center gap-2 cursor-pointer hover:text-white transition-colors group">
+                            ID {getSortIcon('ID')}
                         </div>
-
-                        {/* Time Column */}
-                        <div
-                            onClick={() => handleSort('time')}
-                            className="col-span-3 flex items-center gap-2 cursor-pointer hover:text-white transition-colors group"
-                        >
+                        <div onClick={() => handleSort('time')} className="col-span-3 flex items-center gap-2 cursor-pointer hover:text-white transition-colors group">
                             Thời Gian {getSortIcon('time')}
                         </div>
 
                         {(selectedSensor === 'all' || selectedSensor === 'temperature') && (
-                            <div
-                                onClick={() => handleSort('temperature')}
-                                className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} flex items-center gap-2 text-orange-400 cursor-pointer hover:text-orange-300 transition-colors`}
-                            >
+                            <div onClick={() => handleSort('temperature')} className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} flex items-center gap-2 text-orange-400 cursor-pointer hover:text-orange-300 transition-colors`}>
                                 <Sun size={16} /> Nhiệt độ {getSortIcon('temperature')}
                             </div>
                         )}
-
                         {(selectedSensor === 'all' || selectedSensor === 'humidity') && (
-                            <div
-                                onClick={() => handleSort('humidity')}
-                                className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors`}
-                            >
+                            <div onClick={() => handleSort('humidity')} className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors`}>
                                 <Droplets size={16} /> Độ ẩm {getSortIcon('humidity')}
                             </div>
                         )}
-
                         {(selectedSensor === 'all' || selectedSensor === 'light') && (
-                            <div
-                                onClick={() => handleSort('light')}
-                                className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors`}
-                            >
+                            <div onClick={() => handleSort('light')} className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors`}>
                                 <Sun size={16} /> Ánh sáng {getSortIcon('light')}
                             </div>
                         )}
                     </div>
 
-                    {/* Table Body */}
                     <div className="divide-y divide-white/5">
-                        {currentItems.length > 0 ? (
-                            currentItems.map((item) => (
-                                <motion.div
-                                    layout
-                                    key={item.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="grid grid-cols-12 gap-4 p-4 hover:bg-white/5 transition-colors text-sm text-white/80"
-                                >
-                                    <div className="col-span-1 font-mono text-xs text-white/40 truncate" title={item.id}>#{item.id}</div>
-                                    <div className="col-span-3 font-mono">{item.time}</div>
+                        {data.length > 0 ? (
+                            data.map((item) => {
+                                const sName = item.sensor ? item.sensor.name : 'Unknown';
+                                const timeStr = new Date(item.date).toLocaleString('vi-VN');
+                                return (
+                                <motion.div key={item.ID} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-12 gap-4 p-4 hover:bg-white/5 transition-colors text-sm text-white/80">
+                                    <div className="col-span-1 font-mono text-xs text-white/40 truncate">#{item.ID}</div>
+                                    <div className="col-span-3 font-mono">{timeStr}</div>
 
                                     {(selectedSensor === 'all' || selectedSensor === 'temperature') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} text-orange-300`}>
-                                            {item.temperature}°C
+                                            {sName === 'temperature' ? `${item.value}°C` : '--'}
                                         </div>
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'humidity') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-cyan-300`}>
-                                            {item.humidity}%
+                                            {sName === 'humidity' ? `${item.value}%` : '--'}
                                         </div>
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'light') && (
                                         <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-yellow-300`}>
-                                            {item.light} Lx
+                                            {sName === 'light' ? `${item.value} Lx` : '--'}
                                         </div>
                                     )}
                                 </motion.div>
-                            ))
+                            )})
                         ) : (
-                            <div className="p-8 text-center text-white/30">
-                                Không tìm thấy dữ liệu phù hợp
-                            </div>
+                            <div className="p-8 text-center text-white/30">Không tìm thấy dữ liệu phù hợp</div>
                         )}
                     </div>
                 </div>
             </motion.div>
 
-            {/* Pagination */}
             <div className="flex justify-between items-center px-2">
                 <div className="flex items-center gap-3">
-                    <div className="text-xs text-white/40">
-                        Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, processedHistory.length)} trên tổng {processedHistory.length}
-                    </div>
+                    <div className="text-xs text-white/40">Tổng số: {totalRecords}</div>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-white/40">Số bản ghi:</span>
+                        <span className="text-xs text-white/40">Hiển thị:</span>
                         <select
                             value={itemsPerPage}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                            className="px-2 py-1 bg-black/20 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500/50 transition-colors cursor-pointer hover:bg-black/30"
-                            style={{ colorScheme: 'dark' }}
+                            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                            className="px-2 py-1 bg-black/20 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
                         >
-                            <option value="5">5</option>
-                            <option value="8">8</option>
                             <option value="10">10</option>
                             <option value="25">25</option>
                             <option value="50">50</option>
-                            <option value="100">100</option>
                         </select>
                     </div>
                 </div>
                 <div className="flex gap-1">
-                    <button
-                        onClick={() => paginate(Math.max(1, currentPage - 1))}
-                        disabled={currentPage === 1}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 transition-colors"
-                    >
+                    <button onClick={() => paginate(Math.max(1, currentPage - 1))} disabled={currentPage === 1} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">
                         <ChevronLeft size={16} />
                     </button>
-
                     <div className="flex items-center px-4 bg-white/5 rounded-lg text-xs font-mono">
                         {currentPage} / {totalPages || 1}
                     </div>
-
-                    <button
-                        onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 transition-colors"
-                    >
+                    <button onClick={() => paginate(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages || totalPages === 0} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 disabled:opacity-30 transition-colors">
                         <ChevronRight size={16} />
                     </button>
                 </div>
