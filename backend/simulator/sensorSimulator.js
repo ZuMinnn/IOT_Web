@@ -10,6 +10,8 @@ const INTERVAL_MS = 5000;
 
 const client = mqtt.connect(BROKER_URL, {
     port: parseInt(process.env.MQTT_PORT) || 1883,
+    username: process.env.MQTT_USERNAME || 'tranminhvu',
+    password: process.env.MQTT_PASSWORD || '123456'
 });
 
 function drift(prev, min, max, step) {

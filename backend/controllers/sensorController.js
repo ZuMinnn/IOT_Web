@@ -24,7 +24,7 @@ const getLatest = async (req, res, next) => {
 };
 
 // GET /api/v1/sensors/history
-// Query params: page, limit, sensorName, startDate, endDate, sortBy, sortDir
+// Query params: page, limit, sensorName, startDate, endDate, sortBy, sortDir, keyword
 const getHistory = async (req, res, next) => {
     try {
         const page     = parseInt(req.query.page)    || 1;
@@ -37,8 +37,19 @@ const getHistory = async (req, res, next) => {
         if (req.query.startDate) where.date = { [Op.gte]: new Date(req.query.startDate) };
         if (req.query.endDate)   where.date = { ...where.date, [Op.lte]: new Date(req.query.endDate) };
 
+        if (req.query.keyword) {
+            // Sequelize search by value (cast float to string) or ID. 
+            // In MySQL, `value LIKE '%keyword%'` usually works implicitly if value is FLOAT.
+            where[Op.or] = [
+                { value: { [Op.like]: `%${req.query.keyword}%` } },
+                { ID: { [Op.like]: `%${req.query.keyword}%` } }
+            ];
+        }
+
         const sensorWhere = {};
-        if (req.query.sensorName) sensorWhere.name = req.query.sensorName;
+        if (req.query.sensorName && req.query.sensorName !== 'all') {
+            sensorWhere.name = req.query.sensorName;
+        }
 
         const { count, rows } = await SensorData.findAndCountAll({
             where,
