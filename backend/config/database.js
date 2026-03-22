@@ -8,8 +8,8 @@ const sequelize = new Sequelize(
     {
         host:    process.env.DB_HOST || 'localhost',
         port:    parseInt(process.env.DB_PORT) || 3306,
-        dialect: 'mariadb',
-        logging: false, // Tắt log SQL (bật lại khi debug: console.log)
+        dialect: 'mysql',
+        logging: false, // Tắt log SQL 
         pool: {
             max:     10,
             min:     0,
@@ -17,10 +17,10 @@ const sequelize = new Sequelize(
             idle:    10000,
         },
         define: {
-            timestamps:  false, // Tắt auto createdAt/updatedAt của Sequelize (ta tự quản)
+            timestamps:  false, 
             underscored: false,
         },
-        timezone: '+07:00', // Múi giờ Việt Nam
+        timezone: '+07:00', 
     }
 );
 

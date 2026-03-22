@@ -13,7 +13,7 @@ let client = null;
 function initMqtt() {
     const brokerUrl = `${process.env.MQTT_HOST || 'mqtt://localhost'}`;
     client = mqtt.connect(brokerUrl, {
-        port:     parseInt(process.env.MQTT_PORT) || 1883,
+        port:     parseInt(process.env.MQTT_PORT) || 3636,
         username: process.env.MQTT_USERNAME || undefined,
         password: process.env.MQTT_PASSWORD || undefined,
         reconnectPeriod: 5000,
