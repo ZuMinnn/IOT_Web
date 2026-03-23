@@ -77,7 +77,7 @@ export const Profile = () => {
                     {/* GitHub Card */}
                     <motion.a
                         variants={itemVariants}
-                        href="https://github.com/ZuMinnn"
+                        href="https://github.com/ZuMinnn/IOT_Web"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1"
@@ -91,18 +91,21 @@ export const Profile = () => {
                                 <ExternalLink size={16} className="text-white/40 group-hover:text-white/80 transition-colors" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white mb-1">GitHub Profile</h3>
+                                <h3 className="text-xl font-bold text-white mb-1">GitHub Repository</h3>
                                 <p className="text-sm text-indigo-200/60 group-hover:text-indigo-200 transition-colors">
-                                    Explore my repositories and projects.
+                                    Mã nguồn dự án trên GitHub.
                                 </p>
                             </div>
                         </div>
                     </motion.a>
 
-                    {/* Report Card (Future Link) */}
-                    <motion.div
+                    {/* Report Card (PDF Link) */}
+                    <motion.a
                         variants={itemVariants}
-                        className="group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300"
+                        href="/IOT1.pdf"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl" />
                         <div className="relative flex flex-col h-full justify-between gap-4">
@@ -110,23 +113,29 @@ export const Profile = () => {
                                 <div className="p-3 rounded-2xl bg-cyan-500/20 text-cyan-400">
                                     <FileText size={24} />
                                 </div>
-                                <div className="px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-white/40 border border-white/5">
-                                    COMING SOON
+                                <div className="flex items-center gap-1">
+                                    <span className="px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-white/40 border border-white/5 group-hover:text-cyan-400 transition-colors">
+                                        MỞ PDF
+                                    </span>
+                                    <ExternalLink size={16} className="text-white/40 group-hover:text-white/80 transition-colors ml-1" />
                                 </div>
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-white mb-1">Báo Cáo PDF</h3>
                                 <p className="text-sm text-cyan-100/60 group-hover:text-cyan-100 transition-colors">
-                                    Documentation and project report.
+                                    Tài liệu báo cáo dự án.
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </motion.a>
 
-                    {/* API Doc Card */}
-                    <motion.div
+                    {/* API Doc Card (Postman Placeholder) */}
+                    <motion.a
                         variants={itemVariants}
-                        className="group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300"
+                        href="#"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group relative p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 hover:-translate-y-1"
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 to-orange-500/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl blur-xl" />
                         <div className="relative flex flex-col h-full justify-between gap-4">
@@ -134,18 +143,21 @@ export const Profile = () => {
                                 <div className="p-3 rounded-2xl bg-amber-500/20 text-amber-400">
                                     <Code size={24} />
                                 </div>
-                                <div className="px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-white/40 border border-white/5">
-                                    DOCS
+                                <div className="flex items-center gap-1">
+                                    <span className="px-2 py-1 rounded-md bg-white/5 text-[10px] font-bold text-white/40 border border-white/5 group-hover:text-amber-400 transition-colors">
+                                        POSTMAN
+                                    </span>
+                                    <ExternalLink size={16} className="text-white/40 group-hover:text-white/80 transition-colors ml-1" />
                                 </div>
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white mb-1">API Documentation</h3>
+                                <h3 className="text-xl font-bold text-white mb-1">Postman API</h3>
                                 <p className="text-sm text-amber-100/60 group-hover:text-amber-100 transition-colors">
-                                    System endpoints and integration details.
+                                    Thử nghiệm các API Endpoints.
                                 </p>
                             </div>
                         </div>
-                    </motion.div>
+                    </motion.a>
                 </div>
 
                 {/* API Stats / Preview Section (Optional filler for "API Doc" content) */}
@@ -157,9 +169,11 @@ export const Profile = () => {
                         </h3>
                         <div className="space-y-2">
                             {[
-                                { method: 'GET', path: '/api/v1/sensors/realtime', desc: 'Get current sensor readings' },
-                                { method: 'POST', path: '/api/v1/devices/control', desc: 'Toggle device state' },
-                                { method: 'GET', path: '/api/v1/history', desc: 'Retrieve historical data' },
+                                { method: 'GET', path: '/api/sensors/latest', desc: 'Get latest sensor readings' },
+                                { method: 'GET', path: '/api/sensors/history', desc: 'Retrieve historical sensor data' },
+                                { method: 'GET', path: '/api/device/status', desc: 'Get current state of devices' },
+                                { method: 'POST', path: '/api/device/control', desc: 'Toggle a device state' },
+                                { method: 'GET', path: '/api/device-actions', desc: 'Retrieve device action history' },
                             ].map((api, i) => (
                                 <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-colors group">
                                     <span className={`text-xs font-bold px-2 py-1 rounded ${api.method === 'GET' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'
