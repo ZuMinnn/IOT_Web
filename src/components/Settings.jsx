@@ -26,7 +26,7 @@ export const Settings = () => {
         
         <div className="space-y-4">
           <p className="text-white/60 text-sm">
-            Chọn loại cảm biến Quang trở (LDR) bạn đang sử dụng. Điều này sẽ thay đổi cách bảng điều khiển hiển thị dữ liệu ánh sáng.
+            Chọn loại cảm biến Quang trở (LDR) 
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">

@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload }) => {
                                 style={{ backgroundColor: entry.color }}
                             />
                             <span className="text-white text-sm font-medium">
-                                {entry.name}: {entry.value}
+                                {entry.name}: {entry.dataKey === 'temperature' ? Number(entry.value).toFixed(2) : entry.value}
                                 {entry.dataKey === 'temperature' && '°C'}
                                 {entry.dataKey === 'humidity' && '%'}
                                 {entry.dataKey === 'light' && ' lux'}
