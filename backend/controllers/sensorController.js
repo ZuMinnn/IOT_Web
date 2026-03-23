@@ -1,5 +1,6 @@
 const { Sensor, SensorData } = require('../models');
 const { Op } = require('sequelize');
+const sequelize = require('../config/database');
 
 // GET /api/sensors/latest
 // Returns the most recent value for each sensor (temperature, humidity, light)
@@ -38,12 +39,21 @@ const getHistory = async (req, res, next) => {
         if (req.query.endDate)   where.date = { ...where.date, [Op.lte]: new Date(req.query.endDate) };
 
         if (req.query.keyword) {
-            // Sequelize search by value (cast float to string) or ID. 
-            // In MySQL, `value LIKE '%keyword%'` usually works implicitly if value is FLOAT.
-            where[Op.or] = [
-                { value: { [Op.like]: `%${req.query.keyword}%` } },
-                { ID: { [Op.like]: `%${req.query.keyword}%` } }
-            ];
+            if (req.query.keyword.startsWith('#')) {
+                const idSearch = req.query.keyword.substring(1);
+                where.ID = { [Op.like]: `%${idSearch}%` };
+            } else {
+                let searchVal = req.query.keyword;
+                if (!isNaN(searchVal) && searchVal.trim() !== '') {
+                    searchVal = String(Number(searchVal));
+                }
+                where[Op.and] = [
+                    sequelize.where(
+                        sequelize.cast(sequelize.fn('ROUND', sequelize.col('SensorData.value'), 2), 'CHAR'), 
+                        { [Op.like]: `${searchVal}%` }
+                    )
+                ];
+            }
         }
 
         const sensorWhere = {};

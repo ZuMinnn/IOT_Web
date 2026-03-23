@@ -43,10 +43,26 @@ const getHistory = async (req, res, next) => {
             if (toDate)   where.date[Op.lte] = new Date(toDate);
         }
         if (keyword) {
-            where[Op.or] = [
-                { action: { [Op.like]: `%${keyword}%` } },
-                { status: { [Op.like]: `%${keyword}%` } },
-            ];
+            if (keyword.startsWith('#')) {
+                const idSearch = keyword.substring(1);
+                where.ID = { [Op.like]: `%${idSearch}%` };
+            } else {
+                const searchLower = keyword.toLowerCase().trim();
+                if (searchLower === 'on') {
+                    where.action = 'ON';
+                    where.status = 'success';
+                } else if (searchLower === 'off') {
+                    where.action = 'OFF';
+                    where.status = 'success';
+                } else if (searchLower === 'fail' || searchLower === 'failed') {
+                    where.status = 'failed';
+                } else {
+                    where[Op.or] = [
+                        { action: { [Op.like]: `%${keyword}%` } },
+                        { status: { [Op.like]: `%${keyword}%` } },
+                    ];
+                }
+            }
         }
 
         const deviceWhere = {};
