@@ -1,193 +1,103 @@
-# 🌐 IoT Dashboard - Real-time Environmental Monitoring
+# IoT Dashboard - Real-time Environmental Monitoring
 
-A premium, commercial-grade IoT Dashboard built with React, TailwindCSS, Framer Motion, and Recharts for real-time environmental sensor monitoring.
+A high-performance, commercial-grade IoT Dashboard built with React, TailwindCSS, Framer Motion, and Recharts for real-time environmental sensor monitoring.
 
-![Dashboard Preview](https://img.shields.io/badge/Status-Production%20Ready-success) ![React](https://img.shields.io/badge/React-18-blue) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38bdf8) ![Framer Motion](https://img.shields.io/badge/Framer%20Motion-Animated-ff69b4)
+![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success) ![React: 18](https://img.shields.io/badge/React-18-blue) ![TailwindCSS: 3](https://img.shields.io/badge/TailwindCSS-3-38bdf8) ![Framer Motion: Animated](https://img.shields.io/badge/Framer%20Motion-Animated-ff69b4)
 
-## ✨ Features
+## Architecture Overview
 
-### 🎴 Real-time Sensor Monitoring
-- **Temperature Sensor**: Dynamic heat effects with color-coded glows (cold/normal/hot)
-- **Humidity Sensor**: Animated fog overlay effects based on humidity levels
-- **Light Intensity Sensor**: Radial glow effects with rotating sun/moon icons
+This project implements a scalable frontend architecture for processing and visualizing high-frequency IoT sensor data streams.
 
-### 🎨 Premium Visual Effects
-- **Glassmorphism UI**: Semi-transparent cards with backdrop blur
-- **3D Tilt Effects**: Interactive perspective transforms on hover
-- **Dynamic Animations**: Framer Motion powered smooth transitions
-- **Heat Wave Distortion**: CSS-based distortion at high temperatures
-- **Fog Overlay**: Floating animation for humidity visualization
-- **Radial Glow**: Pulsing light effects for brightness levels
+### Core Capabilities
+- **Real-time Sensor Monitoring**: Processes and visualizes dynamic data streams for temperature, humidity, and light intensity.
+- **Data Visualization**: Leverages Recharts for multi-line time-series charting with custom tooltips, threshold indicators, and optimized micro-re-renders.
+- **Hardware-accelerated Visual Effects**: Utilizes CSS and Framer Motion for performant UI feedback (e.g., heat distortion, fog overlays, radial glows).
+- **Responsive UI**: Implements a glassmorphism design system built on TailwindCSS, scalable to enterprise monitoring requirements.
+- **Historical Activity Logging**: Provides paginated tracking logs and compound filtering (Time, Sensor IDs, Actions).
 
-### 📊 Data Visualization
-- **Multi-line Time-series Chart**: Recharts powered historical data display
-- **Color-coded Lines**: Temperature (yellow), Humidity (cyan), Light (yellow)
-- **Custom Tooltips**: Status indicators (Low/Normal/High) with values
-- **Real-time Updates**: Auto-updates every 2.5 seconds
+## Technology Stack
 
-### 🎭 Design Aesthetic
-- **Dark Mode**: Professional gradient background
-- **Glassmorphism**: Modern, premium card design
-- **Inter Font**: Google Fonts integration
-- **Responsive Layout**: Adapts to different screen sizes
+- **Core Infrastructure**: React 18, Vite
+- **Styling Architecture**: TailwindCSS v3 (Utility-first, Custom Themes)
+- **Animation Engine**: Framer Motion
+- **Data Visualization**: Recharts
+- **Iconography**: Lucide React
 
-## 🛠️ Tech Stack
-
-- **Framework**: React 18 + Vite
-- **Styling**: TailwindCSS v3
-- **Animation**: Framer Motion
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Build Tool**: Vite
-
-## 🚀 Quick Start
+## Getting Started
 
 ### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
+- Node.js (v18.x or strictly higher recommended)
+- npm or yarn package manager
 
-### Installation
+### Initialization
 
 ```bash
-# Navigate to the project directory
+# Navigate to the repository
 cd e:/WebPtit/IoT-Web
 
-# Install dependencies (already done)
+# Install dependencies
 npm install
 
-# Start development server
+# Initialize development server
 npm run dev
-
-# Open browser to http://localhost:5173/
 ```
 
-## 📁 Project Structure
+The application will be accessible at `http://localhost:5173/`.
 
-```
-e:/WebPtit/IoT-Web/
-├── index.html                  # Root HTML
-├── tailwind.config.js          # Custom TailwindCSS theme
-├── postcss.config.js           # PostCSS configuration
-├── vite.config.js              # Vite configuration
-├── src/
-│   ├── main.jsx                # Entry point
-│   ├── App.jsx                 # Main dashboard
-│   ├── index.css               # Global styles
-│   ├── hooks/
-│   │   └── useSensorData.js    # Real-time data hook
-│   ├── utils/
-│   │   ├── constants.js        # Thresholds & constants
-│   │   └── sensorEffects.js    # Visual effect logic
-│   └── components/
-│       ├── SensorCard.jsx      # Base card component
-│       ├── TemperatureCard.jsx # Temperature sensor
-│       ├── HumidityCard.jsx    # Humidity sensor
-│       ├── LightCard.jsx       # Light sensor
-│       ├── SensorChart.jsx     # Time-series chart
-│       └── effects/
-│           ├── FogOverlay.jsx  # Fog effect
-│           ├── HeatWave.jsx    # Heat distortion
-│           └── RadialGlow.jsx  # Radial light
+## System Architecture mapped to Project Structure
+
+```text
+src/
+├── components/          # Reusable view components
+│   ├── effects/         # Componentized specialized rendering logic for sensor UI feedback
+│   └── *.jsx            # Complex compositions (e.g., SensorHistory, DeviceHistory)
+├── hooks/               # Custom React hooks managing states and API lifecycles
+├── utils/               # Business logic, configuration constants, and format handling
+├── App.jsx              # Application shell and route/composition root
+└── index.css            # Global stylesheet and Tailwind layer directives
 ```
 
-## 🎯 Sensor Thresholds
+## Configuration & Tuning
 
-### Temperature
-- **Cold**: < 20°C (Blue glow, slow animation)
-- **Normal**: 20-30°C (Yellow/orange gradient)
-- **Hot**: > 30°C (Red glow, pulse, heat wave)
+### Sensor Threshold Profiles
+The client application dynamically updates UI feedback based on configurable engineering thresholds found in `src/utils/constants.js`.
 
-### Humidity
-- **Dry**: < 40% (Clear appearance)
-- **Normal**: 40-70% (Light fog)
-- **Wet**: > 70% (Heavy fog with blur)
+- **Temperature Module**: Cold (< 20°C), Normal (20-30°C), Hot (> 30°C)
+- **Humidity Module**: Dry (< 40%), Normal (40-70%), Wet (> 70%)
+- **Illuminance Module**: Dark (< 300 lux), Medium (300-800 lux), Bright (> 800 lux)
 
-### Light
-- **Dark**: < 300 lux (Minimal glow)
-- **Medium**: 300-800 lux (Soft glow)
-- **Bright**: > 800 lux (Radial glow, rotating icon)
-
-## 🔧 Customization
-
-### Modify Sensor Ranges
-Edit `src/utils/constants.js`:
+### Customization Vectors
+Adjust application parameters like polling rates and operational ranges directly via constants:
 
 ```javascript
+// src/utils/constants.js
 export const SENSOR_RANGES = {
   temperature: { min: 15, max: 35 },
   humidity: { min: 30, max: 90 },
   light: { min: 100, max: 1200 },
 };
+
+export const UPDATE_INTERVAL = 2500; // ms between automated sync cycles
 ```
 
-### Adjust Update Interval
-Edit `src/utils/constants.js`:
+## Production Deployment & Integration
+
+### External Data Integration (WebSocket/REST)
+The application is pre-configured to handle external integrations cleanly. To transition from polled REST to instantaneous WebSocket execution:
 
 ```javascript
-export const UPDATE_INTERVAL = 2500; // milliseconds
-```
-
-### Change Color Palette
-Edit `tailwind.config.js`:
-
-```javascript
-colors: {
-  temp: {
-    cold: '#60A5FA',
-    normal: '#FBBF24',
-    hot: '#EF4444',
-  },
-  // ... more colors
-}
-```
-
-## 🌐 WebSocket Integration (Future Enhancement)
-
-To connect real IoT devices, replace the simulated data in `src/hooks/useSensorData.js`:
-
-```javascript
-// Replace setInterval simulation with:
+// Inside your data fetching strategy
 useEffect(() => {
-  const ws = new WebSocket('ws://your-iot-server.com');
+  const ws = new WebSocket(import.meta.env.VITE_IOT_BROKER_URL);
   
   ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    setSensorData(data);
+    const payload = JSON.parse(event.data);
+    handleDataStreamUpdate(payload);
   };
 
   return () => ws.close();
 }, []);
 ```
 
-## 📸 Screenshots
-
-See the full walkthrough at `walkthrough.md` for detailed screenshots and testing results.
-
-## 🏆 Features Checklist
-
-- ✅ React + Vite setup
-- ✅ TailwindCSS integration
-- ✅ Framer Motion animations
-- ✅ Recharts time-series visualization
-- ✅ Real-time data simulation
-- ✅ 3D tilt effects on hover
-- ✅ Dynamic visual effects (heat, fog, glow)
-- ✅ Glassmorphism design
-- ✅ Dark mode theme
-- ✅ Responsive layout
-- ✅ Professional aesthetics
-- ✅ Counter animations
-- ✅ Custom tooltips
-- ✅ Status indicators
-
-## 📝 License
-
-This project is created for demonstration purposes. Feel free to use and modify as needed.
-
-## 👨‍💻 Author
-
-Built by a Senior Front-End Engineer & Creative Technologist
-
----
-
-**Note**: This is a production-ready application, not a student demo. The code is clean, well-structured, and follows modern best practices for React development.
+## License
+Provided "as is" under the MIT License. Structured and maintained for enterprise-grade scalability.
