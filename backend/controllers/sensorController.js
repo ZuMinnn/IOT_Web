@@ -24,7 +24,7 @@ const getLatest = async (req, res, next) => {
     }
 };
 
-// GET /api/v1/sensors/history
+// GET /api/sensors/history
 // Query params: page, limit, sensorName, startDate, endDate, sortBy, sortDir, keyword
 const getHistory = async (req, res, next) => {
     try {

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 /**
- * Model Sensor - khớp với bảng Sensor trong ERD
+ * Model Sensor - 
  * Columns: ID, name, createAt
  */
 const Sensor = sequelize.define('Sensor', {

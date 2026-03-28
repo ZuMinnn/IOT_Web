@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 /**
- * Model Device - khớp với bảng Device trong ERD
+ * Model Device - 
  * Columns: ID, name, createAt
  */
 const Device = sequelize.define('Device', {

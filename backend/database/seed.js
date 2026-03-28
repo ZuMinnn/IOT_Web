@@ -2,7 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const { sequelize, Device, DeviceAction, Sensor, SensorData } = require('../models');
 
 async function seedDatabase() {
-    console.log('🌱 Seeding database...');
+    console.log(' Seeding database...');
     await sequelize.authenticate();
 
     // ── Devices ──────────────────────────────────────────────
@@ -18,7 +18,7 @@ async function seedDatabase() {
         where: { ID: 3 },
         defaults: { name: 'light', createAt: new Date() },
     });
-    console.log('✅ Devices seeded: fan, airConditioner, light');
+    console.log(' Devices seeded: fan, airConditioner, light');
 
     // ── Sensors ──────────────────────────────────────────────
     const [tempSensor] = await Sensor.findOrCreate({
@@ -33,7 +33,7 @@ async function seedDatabase() {
         where: { ID: 3 },
         defaults: { name: 'light', createAt: new Date() },
     });
-    console.log('✅ Sensors seeded: temperature, humidity, light');
+    console.log('Sensors seeded: temperature, humidity, light');
 
     // ── SensorData mẫu (10 bản ghi mỗi cảm biến) ────────────
     const now = new Date();
@@ -47,7 +47,7 @@ async function seedDatabase() {
         );
     }
     await SensorData.bulkCreate(sensorSeedData, { ignoreDuplicates: true });
-    console.log(`✅ SensorData seeded: ${sensorSeedData.length} records`);
+    console.log(` SensorData seeded: ${sensorSeedData.length} records`);
 
     // ── DeviceAction mẫu ─────────────────────────────────────
     const actionSeedData = [
@@ -58,13 +58,13 @@ async function seedDatabase() {
         { deviceID: 3, action: 'OFF', status: 'success', running: 0, date: new Date(now - 50000),  createAt: new Date(now - 50000)  },
     ];
     await DeviceAction.bulkCreate(actionSeedData);
-    console.log(`✅ DeviceActions seeded: ${actionSeedData.length} records`);
+    console.log(` DeviceActions seeded: ${actionSeedData.length} records`);
 
-    console.log('\n🎉 Seeding completed successfully!');
+    console.log('\n Seeding completed successfully!');
     process.exit(0);
 }
 
 seedDatabase().catch(err => {
-    console.error('❌ Seeding failed:', err.message);
+    console.error(' Seeding failed:', err.message);
     process.exit(1);
 });

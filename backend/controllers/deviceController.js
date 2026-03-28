@@ -106,7 +106,7 @@ const control = async (req, res, next) => {
         const log = await DeviceAction.create({
             deviceID: device.ID,
             action,
-            status:   'pending', // Lưu trạng thái chờ
+            status:   'pending', // save log với trạng thái chờ xử lý
             running:  action === 'ON' ? 1 : 0,
             date:     new Date(),
             createAt: new Date(),
@@ -114,15 +114,15 @@ const control = async (req, res, next) => {
 
         publishDeviceControl(deviceName, action);
 
-        // Hẹn giờ check mạch phần cứng (Time out 5 giây)
+        // time out 5s 
         setTimeout(async () => {
             try {
                 const checkLog = await DeviceAction.findByPk(log.ID);
                 if (checkLog && checkLog.status === 'pending') {
-                    // Nếu 5s sau vẫn chờ -> Đánh lỗi
+                    
                     await checkLog.update({ status: 'failed', running: 0 });
                     const { pushDeviceStatus } = require('../services/websocketService');
-                    // Bắn Socket về Frontend để tắt vòng xoay
+                    
                     pushDeviceStatus({ device: deviceName, error: 'timeout' });
                 }
             } catch (err) {

@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 /**
- * Model DeviceAction - khớp với bảng DeviceAction trong ERD
+ * Model DeviceAction 
  * Columns: ID, deviceID (FK→Device), action, status, running, date, createAt
  */
 const DeviceAction = sequelize.define('DeviceAction', {

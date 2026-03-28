@@ -11,7 +11,7 @@ const dbName   = process.env.DB_NAME     || 'iot_dashboard';
 
 async function initDatabase() {
 
-    console.log('🔌 Connecting to MySQL (no database)...');
+    console.log(' Connecting to MySQL (no database)...');
     let seqNoDB = new Sequelize('', user, password, {
         host, port, dialect: 'mysql', logging: false,
     });
@@ -39,7 +39,7 @@ async function initDatabase() {
         .map(s => s.trim())
         .filter(s => s.length > 0 && !s.startsWith('--') && !s.toUpperCase().startsWith('USE '));
 
-    console.log(`📋 Executing ${statements.length} SQL statements...`);
+    console.log(` Executing ${statements.length} SQL statements...`);
     for (const stmt of statements) {
         await seqDB.query(stmt + ';');
     }

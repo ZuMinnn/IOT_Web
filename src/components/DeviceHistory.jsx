@@ -31,7 +31,14 @@ export const DeviceHistory = () => {
                 
                 if (selectedDevice !== 'all') params.append('deviceName', selectedDevice);
                 if (searchTerm && (searchMode === 'device' || searchMode === 'compound')) {
-                    params.append('keyword', searchTerm);
+                    // Normalize Vietnamese / mixed-case ON/OFF keywords
+                    const onKeywords = ['on', 'bật', 'bat', 'đã bật', 'da bat', 'bât'];
+                    const offKeywords = ['off', 'tắt', 'tat', 'đã tắt', 'da tat', 'tăt'];
+                    const lower = searchTerm.trim().toLowerCase();
+                    let keyword = searchTerm;
+                    if (onKeywords.includes(lower)) keyword = 'ON';
+                    else if (offKeywords.includes(lower)) keyword = 'OFF';
+                    params.append('keyword', keyword);
                 }
 
                 let currentStartDate = '';
@@ -244,9 +251,9 @@ export const DeviceHistory = () => {
                                                             : 'bg-white/10 text-white/50 border border-white/20'
                                                 }`}>
                                                 {item.status === 'pending'
-                                                    ? `ĐANG CHỜ ${item.action}`
+                                                    ? `ĐANG CHỜ ${item.action === 'ON' ? 'BẬT' : 'TẮT'}`
                                                     : item.status === 'failed'
-                                                        ? `LỖI ${item.action}`
+                                                        ? `LỖI ${item.action === 'ON' ? 'BẬT' : 'TẮT'}`
                                                         : item.action === 'ON'
                                                             ? 'ĐÃ BẬT'
                                                             : 'ĐÃ TẮT'}
