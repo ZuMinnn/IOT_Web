@@ -101,6 +101,35 @@ export const DeviceHistory = () => {
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+    const handleTimeKeyDown = (e) => {
+        const input = e.target;
+        if (e.key === 'ArrowRight' && input.selectionStart === input.value.length) {
+            const next = input.nextElementSibling;
+            if (next && next.nextElementSibling && next.nextElementSibling.tagName === 'INPUT') {
+                e.preventDefault();
+                next.nextElementSibling.focus();
+            }
+        } else if (e.key === 'ArrowLeft' && input.selectionEnd === 0) {
+            const prev = input.previousElementSibling;
+            if (prev && prev.previousElementSibling && prev.previousElementSibling.tagName === 'INPUT') {
+                e.preventDefault();
+                prev.previousElementSibling.focus();
+            }
+        }
+    };
+
+    const handleTimePaste = (e) => {
+        const pasted = e.clipboardData.getData('text');
+        const parts = pasted.split(/[:\s-]/).filter(p => p.trim() !== '' && !isNaN(p));
+        if (parts.length >= 2) {
+            e.preventDefault();
+            setSearchHour(parts[0].slice(0, 2).padStart(2, '0'));
+            setSearchMinute(parts[1].slice(0, 2).padStart(2, '0'));
+            setSearchSecond(parts[2] ? parts[2].slice(0, 2).padStart(2, '0') : '00');
+            setCurrentPage(1);
+        }
+    };
+
     const deviceTabs = [
         { id: 'all', label: 'Tất cả', icon: Activity, color: 'text-white' },
         { id: 'fan', label: 'Quạt', icon: Fan, color: 'text-cyan-400' },
@@ -150,10 +179,11 @@ export const DeviceHistory = () => {
                                 value={searchMode} 
                                 onChange={e => { setSearchMode(e.target.value); setCurrentPage(1); }}
                                 className="px-3 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50"
+                                style={{ colorScheme: 'dark' }}
                             >
-                                <option value="time">Thời gian</option>
-                                <option value="device">Thiết bị</option>
-                                <option value="compound">Phức hợp</option>
+                                <option value="time" className="bg-slate-900 text-white">Thời gian</option>
+                                <option value="device" className="bg-slate-900 text-white">Thiết bị</option>
+                                <option value="compound" className="bg-slate-900 text-white">Phức hợp</option>
                             </select>
                         </div>
 
@@ -175,11 +205,11 @@ export const DeviceHistory = () => {
                                 <div className="flex flex-col gap-1 w-[160px]">
                                     <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Giờ : Phút : Giây</span>
                                     <div className="flex bg-black/20 border border-white/10 rounded-lg overflow-hidden">
-                                        <input type="text" placeholder="HH" maxLength={2} value={searchHour} onChange={e => {setSearchHour(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
-                                        <span className="text-white/30 self-center font-bold">:</span>
-                                        <input type="text" placeholder="MM" maxLength={2} value={searchMinute} onChange={e => {setSearchMinute(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
-                                        <span className="text-white/30 self-center font-bold">:</span>
-                                        <input type="text" placeholder="SS" maxLength={2} value={searchSecond} onChange={e => {setSearchSecond(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                                        <input type="text" placeholder="HH" maxLength={2} value={searchHour} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchHour(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                                        <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
+                                        <input type="text" placeholder="MM" maxLength={2} value={searchMinute} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchMinute(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                                        <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
+                                        <input type="text" placeholder="SS" maxLength={2} value={searchSecond} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchSecond(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
                                     </div>
                                 </div>
                             </>
@@ -278,15 +308,21 @@ export const DeviceHistory = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="text-xs text-white/40">Hiển thị:</span>
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                            className="px-2 py-1 bg-black/20 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
-                        >
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
+                        <div className="flex bg-black/20 p-0.5 rounded-lg border border-white/10">
+                            {[8, 10, 20].map((n) => (
+                                <button
+                                    key={n}
+                                    onClick={() => { setItemsPerPage(n); setCurrentPage(1); }}
+                                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                                        itemsPerPage === n
+                                            ? 'bg-purple-500/30 text-purple-300 ring-1 ring-purple-500/40 shadow-sm'
+                                            : 'text-white/40 hover:text-white hover:bg-white/5'
+                                    }`}
+                                >
+                                    {n}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
                 <div className="flex gap-1">
