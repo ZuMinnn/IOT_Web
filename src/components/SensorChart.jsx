@@ -27,6 +27,8 @@ const CustomTooltip = ({ active, payload }) => {
                         status = getHumidityEffect(entry.value).status;
                     } else if (entry.dataKey === 'light') {
                         status = getLightEffect(entry.value).status;
+                    } else if (entry.dataKey === 'dust') {
+                        status = entry.value > 60 ? 'Cảnh Báo' : 'Bình Thường';
                     }
 
                     return (
@@ -40,6 +42,7 @@ const CustomTooltip = ({ active, payload }) => {
                                 {entry.dataKey === 'temperature' && '°C'}
                                 {entry.dataKey === 'humidity' && '%'}
                                 {entry.dataKey === 'light' && ' lux'}
+                                {entry.dataKey === 'dust' && '%'}
                             </span>
                             <span className="text-white/60 text-xs">({status})</span>
                         </div>
@@ -122,6 +125,17 @@ export const SensorChart = ({ data }) => {
                             name="Ánh sáng"
                             animationDuration={500}
                             yAxisId="right"
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="dust"
+                            stroke="#9CA3AF"
+                            strokeWidth={2}
+                            dot={{ fill: '#9CA3AF', r: 3 }}
+                            activeDot={{ r: 5 }}
+                            name="Độ bụi"
+                            animationDuration={500}
+                            yAxisId="left"
                         />
                     </LineChart>
                 </ResponsiveContainer>

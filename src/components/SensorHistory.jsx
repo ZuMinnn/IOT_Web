@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ChevronDown, Activity, Droplets, Sun, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Activity, Droplets, Sun, ArrowUpDown, ArrowUp, ArrowDown, Search, Wind } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const API_URL = 'http://localhost:3001/api/sensors';
@@ -21,7 +21,7 @@ export const SensorHistory = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const limitMultiplier = selectedSensor === 'all' ? 3 : 1;
+                const limitMultiplier = selectedSensor === 'all' ? 4 : 1;
                 const params = new URLSearchParams({
                     page: currentPage,
                     limit: itemsPerPage * limitMultiplier,
@@ -57,7 +57,8 @@ export const SensorHistory = () => {
                                     timeStr: timeStr,
                                     temperature: '--',
                                     humidity: '--',
-                                    light: '--'
+                                    light: '--',
+                                    dust: '--'
                                 };
                             }
                             
@@ -69,6 +70,7 @@ export const SensorHistory = () => {
                             if (sName === 'temperature') acc[timeStr].temperature = formatValue(curr.value);
                             if (sName === 'humidity') acc[timeStr].humidity = formatValue(curr.value);
                             if (sName === 'light') acc[timeStr].light = formatValue(curr.value);
+                            if (sName === 'dust') acc[timeStr].dust = formatValue(curr.value);
 
                             return acc;
                         }, {});
@@ -77,8 +79,8 @@ export const SensorHistory = () => {
                         setData(processedData);
                         
                         // Because the backend paginates raw rows, we adjust TotalPages roughly for groups
-                        setTotalPages(Math.ceil(json.total / (itemsPerPage * 3)));
-                        setTotalRecords(Math.ceil(json.total / 3));
+                        setTotalPages(Math.ceil(json.total / (itemsPerPage * 4)));
+                        setTotalRecords(Math.ceil(json.total / 4));
                     } else {
                         // Single sensor view, just map them neatly
                         processedData = processedData.map(curr => {
@@ -91,7 +93,8 @@ export const SensorHistory = () => {
                                 timeStr: timeStr,
                                 temperature: sName === 'temperature' ? formatValue(curr.value) : '--',
                                 humidity: sName === 'humidity' ? formatValue(curr.value) : '--',
-                                light: sName === 'light' ? formatValue(curr.value) : '--'
+                                light: sName === 'light' ? formatValue(curr.value) : '--',
+                                dust: sName === 'dust' ? formatValue(curr.value) : '--'
                             };
                         });
                         setData(processedData);
@@ -158,6 +161,7 @@ export const SensorHistory = () => {
         { id: 'temperature', label: 'Nhiệt độ', icon: Sun, color: 'text-orange-400' },
         { id: 'humidity', label: 'Độ ẩm', icon: Droplets, color: 'text-cyan-400' },
         { id: 'light', label: 'Ánh sáng', icon: Sun, color: 'text-yellow-400' },
+        { id: 'dust', label: 'Độ bụi', icon: Wind, color: 'text-gray-400' },
     ];
 
     return (
@@ -244,13 +248,18 @@ export const SensorHistory = () => {
                             </div>
                         )}
                         {(selectedSensor === 'all' || selectedSensor === 'humidity') && (
-                            <div onClick={() => handleSort('humidity')} className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors`}>
+                            <div onClick={() => handleSort('humidity')} className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} flex items-center gap-2 text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors`}>
                                 <Droplets size={16} /> Độ ẩm {getSortIcon('humidity')}
                             </div>
                         )}
                         {(selectedSensor === 'all' || selectedSensor === 'light') && (
-                            <div onClick={() => handleSort('light')} className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} flex items-center gap-2 text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors`}>
+                            <div onClick={() => handleSort('light')} className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} flex items-center gap-2 text-yellow-400 cursor-pointer hover:text-yellow-300 transition-colors`}>
                                 <Sun size={16} /> Ánh sáng {getSortIcon('light')}
+                            </div>
+                        )}
+                        {(selectedSensor === 'all' || selectedSensor === 'dust') && (
+                            <div onClick={() => handleSort('dust')} className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} flex items-center gap-2 text-gray-400 cursor-pointer hover:text-gray-300 transition-colors`}>
+                                <Wind size={16} /> Độ bụi {getSortIcon('dust')}
                             </div>
                         )}
                     </div>
@@ -270,14 +279,20 @@ export const SensorHistory = () => {
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'humidity') && (
-                                        <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-cyan-300`}>
+                                        <div className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} text-cyan-300`}>
                                             {item.humidity !== '--' ? `${item.humidity}%` : '--'}
                                         </div>
                                     )}
 
                                     {(selectedSensor === 'all' || selectedSensor === 'light') && (
-                                        <div className={`${selectedSensor === 'all' ? 'col-span-3' : 'col-span-8'} text-yellow-300`}>
+                                        <div className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} text-yellow-300`}>
                                             {item.light !== '--' ? `${item.light} Lx` : '--'}
+                                        </div>
+                                    )}
+
+                                    {(selectedSensor === 'all' || selectedSensor === 'dust') && (
+                                        <div className={`${selectedSensor === 'all' ? 'col-span-2' : 'col-span-8'} text-gray-300`}>
+                                            {item.dust !== '--' ? `${item.dust}%` : '--'}
                                         </div>
                                     )}
                                 </motion.div>

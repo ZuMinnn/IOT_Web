@@ -54,9 +54,11 @@ CREATE TABLE IF NOT EXISTS SensorData (
 INSERT IGNORE INTO Device (ID, name, createAt) VALUES
 (1, 'fan',            NOW()),
 (2, 'airConditioner', NOW()),
-(3, 'light',          NOW());
+(3, 'light',          NOW()),
+(4, 'warningLight',   NOW());
 
 INSERT IGNORE INTO Sensor (ID, name, createAt) VALUES
 (1, 'temperature', NOW()),
 (2, 'humidity',    NOW()),
-(3, 'light',       NOW())
+(3, 'light',       NOW()),
+(4, 'dust',        NOW())

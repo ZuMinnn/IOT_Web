@@ -4,13 +4,14 @@ import { useDeviceControl } from './hooks/useDeviceControl';
 import { Temperature3DBar } from './components/Temperature3DBar';
 import { Humidity3DBar } from './components/Humidity3DBar';
 import { Light3DBar } from './components/Light3DBar';
+import { Dust3DBar } from './components/Dust3DBar';
 import { DeviceCard } from './components/DeviceCard';
 import { SensorChart } from './components/SensorChart';
 import { SensorHistory } from './components/SensorHistory';
 import { DeviceHistory } from './components/DeviceHistory';
 import { Profile } from './components/Profile';
 import { Settings } from './components/Settings';
-import { Activity, Fan, Wind, Lightbulb, Menu, X, Home, User, Database, ClipboardList, Settings as SettingsIcon } from 'lucide-react';
+import { Activity, Fan, Wind, Lightbulb, AlertTriangle, Menu, X, Home, User, Database, ClipboardList, Settings as SettingsIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
@@ -138,12 +139,13 @@ function App() {
                     <Temperature3DBar temperature={sensorData.temperature} />
                     <Humidity3DBar humidity={sensorData.humidity} />
                     <Light3DBar light={sensorData.light} />
+                    <Dust3DBar dust={sensorData.dust} />
                   </div>
 
                   {/* Right Column: Device Controls + Chart */}
                   <div className="flex flex-col gap-2 min-h-0">
                     {/* Device Controls */}
-                    <div className="grid grid-cols-3 gap-2 flex-shrink-0">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-shrink-0">
                       <DeviceCard
                         name="Quạt"
                         icon={Fan}
@@ -170,6 +172,16 @@ function App() {
                         onToggle={() => toggleDevice('light')}
                         gradient="from-yellow-400 to-amber-500"
                         iconColor="text-yellow-400"
+                      />
+                      <DeviceCard
+                        name="Cảnh Báo"
+                        icon={AlertTriangle}
+                        isOn={devices.warningLight}
+                        isLoading={loadingStates.warningLight}
+                        onToggle={() => toggleDevice('warningLight')}
+                        gradient="from-red-500 to-rose-600"
+                        iconColor="text-white"
+                        isBlinking={devices.warningLight}
                       />
                     </div>
 

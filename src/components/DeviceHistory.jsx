@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Activity, Fan, Wind, Lightbulb, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Activity, Fan, Wind, Lightbulb, Search, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const API_URL = 'http://localhost:3001/api/device-actions';
@@ -58,6 +58,7 @@ export const DeviceHistory = () => {
             case 'fan': return { label: 'Quạt', icon: Fan, color: 'text-cyan-400', bg: 'bg-cyan-500/10' };
             case 'airConditioner': return { label: 'Điều hòa', icon: Wind, color: 'text-blue-400', bg: 'bg-blue-500/10' };
             case 'light': return { label: 'Đèn', icon: Lightbulb, color: 'text-yellow-400', bg: 'bg-yellow-500/10' };
+            case 'warningLight': return { label: 'Cảnh Báo', icon: AlertTriangle, color: 'text-rose-400', bg: 'bg-rose-500/10' };
             default: return { label: deviceName, icon: Activity, color: 'text-white', bg: 'bg-white/10' };
         }
     };
@@ -98,6 +99,7 @@ export const DeviceHistory = () => {
         { id: 'fan', label: 'Quạt', icon: Fan, color: 'text-cyan-400' },
         { id: 'airConditioner', label: 'Điều hòa', icon: Wind, color: 'text-blue-400' },
         { id: 'light', label: 'Đèn', icon: Lightbulb, color: 'text-yellow-400' },
+        { id: 'warningLight', label: 'Đèn cảnh báo', icon: AlertTriangle, color: 'text-rose-400' },
     ];
 
     return (
@@ -223,6 +225,8 @@ export const DeviceHistory = () => {
                                                     ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
                                                     : item.status === 'failed'
                                                         ? 'bg-red-600/30 text-red-500 border border-red-600/50'
+                                                        : item.action === 'warning'
+                                                            ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse'
                                                         : item.action === 'ON'
                                                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                             : 'bg-white/10 text-white/50 border border-white/20'
@@ -231,6 +235,8 @@ export const DeviceHistory = () => {
                                                     ? `ĐANG CHỜ ${item.action === 'ON' ? 'BẬT' : 'TẮT'}`
                                                     : item.status === 'failed'
                                                         ? `LỖI ${item.action === 'ON' ? 'BẬT' : 'TẮT'}`
+                                                        : item.action === 'warning'
+                                                            ? 'CẢNH BÁO BỤI'
                                                         : item.action === 'ON'
                                                             ? 'ĐÃ BẬT'
                                                             : 'ĐÃ TẮT'}

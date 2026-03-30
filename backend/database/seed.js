@@ -18,7 +18,11 @@ async function seedDatabase() {
         where: { ID: 3 },
         defaults: { name: 'light', createAt: new Date() },
     });
-    console.log(' Devices seeded: fan, airConditioner, light');
+    const [warningLight] = await Device.findOrCreate({
+        where: { ID: 4 },
+        defaults: { name: 'warningLight', createAt: new Date() },
+    });
+    console.log(' Devices seeded: fan, airConditioner, light, warningLight');
 
     // ── Sensors ──────────────────────────────────────────────
     const [tempSensor] = await Sensor.findOrCreate({
@@ -33,7 +37,11 @@ async function seedDatabase() {
         where: { ID: 3 },
         defaults: { name: 'light', createAt: new Date() },
     });
-    console.log('Sensors seeded: temperature, humidity, light');
+    const [dustSensor] = await Sensor.findOrCreate({
+        where: { ID: 4 },
+        defaults: { name: 'dust', createAt: new Date() },
+    });
+    console.log('Sensors seeded: temperature, humidity, light, dust');
 
     // ── SensorData mẫu (10 bản ghi mỗi cảm biến) ────────────
     const now = new Date();
@@ -44,6 +52,7 @@ async function seedDatabase() {
             { SensorID: 1, value: (22 + Math.random() * 8).toFixed(2),   date: d }, // temp
             { SensorID: 2, value: (50 + Math.random() * 30).toFixed(2),  date: d }, // humidity
             { SensorID: 3, value: Math.round(200 + Math.random() * 800), date: d }, // light
+            { SensorID: 4, value: Math.round(Math.random() * 100),       date: d }, // dust
         );
     }
     await SensorData.bulkCreate(sensorSeedData, { ignoreDuplicates: true });

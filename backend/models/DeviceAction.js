@@ -23,7 +23,7 @@ const DeviceAction = sequelize.define('DeviceAction', {
         type:      DataTypes.STRING(255),
         allowNull: false,
         validate: {
-            isIn: [['ON', 'OFF']],
+            isIn: [['ON', 'OFF', 'warning']],
         },
     },
     status: {

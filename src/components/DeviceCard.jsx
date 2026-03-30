@@ -14,11 +14,12 @@ export const DeviceCard = ({
     onToggle,
     gradient,
     iconColor,
+    isBlinking = false,
 }) => {
     return (
         <motion.div
             className={`glass-card relative overflow-hidden p-3 ${isOn ? 'border-white/30' : 'border-white/10'
-                } border transition-all duration-300`}
+                } border transition-all duration-300 ${isBlinking ? 'animate-pulse' : ''}`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ scale: 1.02 }}
@@ -93,7 +94,9 @@ export const DeviceCard = ({
                                                     'drop-shadow(0 0 2px rgba(250, 204, 21, 0.5))',
                                                 ],
                                             }
-                                            : {
+                                            : name === 'Cảnh Báo' 
+                                                ? { scale: [1, 1.2, 1], rotate: [0, -10, 10, -10, 10, 0] }
+                                                : {
                                                 scale: [1, 1.1, 1],
                                                 rotate: [0, 5, -5, 0],
                                             }
@@ -156,8 +159,10 @@ export const DeviceCard = ({
                                         isOn
                                             ? {
                                                 opacity: [0.5, 1, 0.5],
-                                            }
-                                            : {}
+                                              }
+                                            : isBlinking 
+                                              ? { opacity: [0.1, 1, 0.1] }
+                                              : {}
                                     }
                                     transition={{
                                         duration: 1.5,
@@ -166,7 +171,7 @@ export const DeviceCard = ({
                                     }}
                                 />
                                 <span className={`text-xs font-medium ${isOn ? 'text-green-400' : 'text-white/50'}`}>
-                                    {isOn ? 'Đang bật' : 'Đã tắt'}
+                                    {isBlinking ? 'CẢNH BÁO' : (isOn ? 'Đang bật' : 'Đã tắt')}
                                 </span>
                             </>
                         )}

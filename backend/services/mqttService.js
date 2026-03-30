@@ -76,6 +76,40 @@ async function onSensorData(payload) {
         saved[sensor.name] = value;
     }
 
+    if (saved.dust !== undefined) {
+        const device = await Device.findOne({ where: { name: 'warningLight' } });
+        if (device) {
+            const lastAction = await DeviceAction.findOne({
+                where: { deviceID: device.ID },
+                order: [['date', 'DESC']]
+            });
+            
+            if (saved.dust > 60) {
+                if (!lastAction || lastAction.action !== 'warning') {
+                    await DeviceAction.create({
+                        deviceID: device.ID,
+                        action: 'warning',
+                        status: 'success',
+                        running: 1,
+                        date: new Date()
+                    });
+                    pushDeviceStatus({ device: 'warningLight', is_on: true, isBlinking: true });
+                }
+            } else {
+                if (lastAction && lastAction.action === 'warning') {
+                    await DeviceAction.create({
+                        deviceID: device.ID,
+                        action: 'OFF', // Tắt cảnh báo
+                        status: 'success',
+                        running: 0,
+                        date: new Date()
+                    });
+                    pushDeviceStatus({ device: 'warningLight', is_on: false, isBlinking: false });
+                }
+            }
+        }
+    }
+
     saved.timestamp = new Date();
     pushSensorData(saved);
 }

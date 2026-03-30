@@ -8,12 +8,14 @@ export const useDeviceControl = () => {
         fan: false,
         airConditioner: false,
         light: false,
+        warningLight: false,
     });
 
     const [loadingStates, setLoadingStates] = useState({
         fan: false,
         airConditioner: false,
         light: false,
+        warningLight: false,
     });
 
     // 1. Fetch initial status
@@ -26,6 +28,7 @@ export const useDeviceControl = () => {
                     fan: !!data.fan,
                     airConditioner: !!data.airConditioner,
                     light: !!data.light,
+                    warningLight: !!data.warningLight,
                 });
             } catch (err) {
                 console.error('Failed to fetch initial device status', err);
@@ -44,7 +47,7 @@ export const useDeviceControl = () => {
             try {
                 const msg = JSON.parse(event.data);
                 if (msg.type === 'device' && msg.payload) {
-                    const { device, is_on, error } = msg.payload;
+                    const { device, is_on, error, isBlinking } = msg.payload;
                     
                     if (error === 'timeout') {
                         alert(`Thiết bị ${device} không phản hồi! (Timeout)`);

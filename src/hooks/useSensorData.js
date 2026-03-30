@@ -9,6 +9,7 @@ export const useSensorData = () => {
         temperature: 0,
         humidity: 0,
         light: 0,
+        dust: 0,
         timestamp: new Date(),
     });
     
@@ -28,6 +29,7 @@ export const useSensorData = () => {
                     temperature: data.temperature || 0,
                     humidity: data.humidity || 0,
                     light: data.light || 0,
+                    dust: data.dust || 0,
                     timestamp: data.timestamp ? new Date(data.timestamp) : now,
                 };
                 
@@ -63,23 +65,26 @@ export const useSensorData = () => {
                     const pay = msg.payload;
                     const timestamp = new Date(pay.timestamp || new Date());
                     
-                    const newData = {
-                        temperature: pay.temperature,
-                        humidity: pay.humidity,
-                        light: pay.light,
-                        timestamp
-                    };
+                    setSensorData((prevData) => {
+                        const newData = {
+                            temperature: pay.temperature !== undefined ? pay.temperature : prevData.temperature,
+                            humidity: pay.humidity !== undefined ? pay.humidity : prevData.humidity,
+                            light: pay.light !== undefined ? pay.light : prevData.light,
+                            dust: pay.dust !== undefined ? pay.dust : prevData.dust,
+                            timestamp
+                        };
 
-                    setSensorData(newData);
+                        const newId = ++lastIdRef.current;
+                        const formattedTime = timestamp.toLocaleTimeString('vi-VN', {
+                            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+                        });
 
-                    const newId = ++lastIdRef.current;
-                    const formattedTime = timestamp.toLocaleTimeString('vi-VN', {
-                        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-                    });
+                        setHistory((prevHistory) => {
+                            const newHistoryList = [...prevHistory, { id: newId, ...newData, time: formattedTime }];
+                            return newHistoryList.slice(-MAX_DATA_POINTS);
+                        });
 
-                    setHistory((prev) => {
-                        const newHistory = [...prev, { id: newId, ...newData, time: formattedTime }];
-                        return newHistory.slice(-MAX_DATA_POINTS);
+                        return newData;
                     });
                 }
             } catch (err) {
