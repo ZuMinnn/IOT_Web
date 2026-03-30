@@ -7,6 +7,7 @@ const { pushSensorData, pushDeviceStatus } = require('./websocketService');
 const TOPIC_SENSOR = 'iot/sensor/env';
 const TOPIC_DEVICE_CONTROL = 'iot/device/control';
 const TOPIC_DEVICE_STATUS = 'iot/device/status';
+const TOPIC_DEVICE_SYNC = 'iot/device/request_sync';
 
 let client = null;
 
@@ -27,10 +28,18 @@ function initMqtt() {
         client.subscribe(TOPIC_DEVICE_STATUS, (err) => {
             if (!err) console.log(`Subscribed to ${TOPIC_DEVICE_STATUS}`);
         });
+        client.subscribe(TOPIC_DEVICE_SYNC, (err) => {
+            if (!err) console.log(`Subscribed to ${TOPIC_DEVICE_SYNC}`);
+        });
     });
 
     client.on('message', async (topic, message) => {
         try {
+            if (topic === TOPIC_DEVICE_SYNC) {
+                await handleDeviceSync();
+                return;
+            }
+
             const payload = JSON.parse(message.toString());
 
             if (topic === TOPIC_SENSOR) {
@@ -104,6 +113,33 @@ async function onDeviceStatus(payload) {
 function publishDeviceControl(deviceName, action) {
     if (!client || !client.connected) return;
     client.publish(TOPIC_DEVICE_CONTROL, JSON.stringify({ device: deviceName, action }));
+}
+
+// Sync physical devices with the last known DB state
+// Sync physical devices with the last known DB state
+async function handleDeviceSync() {
+    console.log('Received hardware sync request, fetching latest DB state...');
+    try {
+        const devices = await Device.findAll();
+        for (const device of devices) {
+            // Chỉ lấy trạng thái success thay vì bất kỳ trạng thái nào
+            const lastSuccessAction = await DeviceAction.findOne({
+                where: { deviceID: device.ID, status: 'success' },
+                order: [['date', 'DESC']]
+            });
+            
+            if (lastSuccessAction) {
+                const actionStr = lastSuccessAction.action === 'ON' ? 'ON' : 'OFF';
+                publishDeviceControl(device.name, actionStr);
+                console.log(`Synced ${device.name} -> ${actionStr}`);
+                
+                // Tránh ESP8266 bị ngợp khi nhận nhiều lệnh cùng lúc
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+        }
+    } catch (err) {
+        console.error('Error handling device sync:', err);
+    }
 }
 
 module.exports = { initMqtt, publishDeviceControl };

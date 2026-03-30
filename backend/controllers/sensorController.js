@@ -43,16 +43,47 @@ const getHistory = async (req, res, next) => {
                 const idSearch = req.query.keyword.substring(1);
                 where.ID = { [Op.like]: `%${idSearch}%` };
             } else {
-                let searchVal = req.query.keyword;
-                if (!isNaN(searchVal) && searchVal.trim() !== '') {
-                    searchVal = String(Number(searchVal));
+                let searchVal = req.query.keyword.trim();
+                const searchFilters = [];
+                
+                if (!isNaN(searchVal) && searchVal !== '') {
+                    searchFilters.push(
+                        sequelize.where(
+                            sequelize.cast(sequelize.fn('ROUND', sequelize.col('SensorData.value'), 2), 'CHAR'), 
+                            { [Op.like]: `${Number(searchVal)}%` }
+                        )
+                    );
+                } else {
+                    searchFilters.push({ value: { [Op.like]: `%${searchVal}%` } });
                 }
-                where[Op.and] = [
+
+                // Hỗ trợ tìm dạng chuỗi thời gian như 14:39:33 30/3/2026
+                searchFilters.push(
                     sequelize.where(
-                        sequelize.cast(sequelize.fn('ROUND', sequelize.col('SensorData.value'), 2), 'CHAR'), 
-                        { [Op.like]: `${searchVal}%` }
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%H:%i:%s %d/%m/%Y'),
+                        { [Op.like]: `%${searchVal}%` }
                     )
-                ];
+                );
+                searchFilters.push(
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%H:%i:%s %e/%c/%Y'),
+                        { [Op.like]: `%${searchVal}%` }
+                    )
+                );
+                searchFilters.push(
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%d/%m/%Y %H:%i:%s'),
+                        { [Op.like]: `%${searchVal}%` }
+                    )
+                );
+                searchFilters.push(
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%e/%c/%Y %H:%i:%s'),
+                        { [Op.like]: `%${searchVal}%` }
+                    )
+                );
+
+                where[Op.or] = searchFilters;
             }
         }
 

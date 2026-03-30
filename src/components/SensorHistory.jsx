@@ -12,11 +12,6 @@ export const SensorHistory = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [selectedSensor, setSelectedSensor] = useState('all');
-    const [searchMode, setSearchMode] = useState('compound');
-    const [searchDate, setSearchDate] = useState('');
-    const [searchHour, setSearchHour] = useState('');
-    const [searchMinute, setSearchMinute] = useState('');
-    const [searchSecond, setSearchSecond] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -37,42 +32,7 @@ export const SensorHistory = () => {
                 params.append('sortBy', apiSortKey);
                 params.append('sortDir', sortConfig.direction);
 
-                let currentStartDate = '';
-                let currentEndDate = '';
-                
-                if ((searchMode === 'time' || searchMode === 'compound') && searchDate) {
-                    const [year, month, day] = searchDate.split('-');
-                    let hStart = 0, hEnd = 23;
-                    let mStart = 0, mEnd = 59;
-                    let sStart = 0, sEnd = 59;
-
-                    if (searchHour !== '') {
-                        hStart = parseInt(searchHour);
-                        hEnd = parseInt(searchHour);
-                        if (searchMinute !== '') {
-                            mStart = parseInt(searchMinute);
-                            mEnd = parseInt(searchMinute);
-                            if (searchSecond !== '') {
-                                sStart = parseInt(searchSecond);
-                                sEnd = parseInt(searchSecond);
-                            }
-                        }
-                    }
-
-                    const dtStart = new Date(year, month - 1, day, hStart, mStart, sStart, 0);
-                    const dtEnd = new Date(year, month - 1, day, hEnd, mEnd, sEnd, 999);
-                    currentStartDate = dtStart.toISOString();
-                    currentEndDate = dtEnd.toISOString();
-                }
-
-                let apiSearchTerm = '';
-                if (searchMode === 'sensor' || searchMode === 'compound') {
-                    apiSearchTerm = searchTerm;
-                }
-
-                if (apiSearchTerm) params.append('keyword', apiSearchTerm);
-                if (currentStartDate) params.append('startDate', currentStartDate);
-                if (currentEndDate) params.append('endDate', currentEndDate);
+                if (searchTerm) params.append('keyword', searchTerm);
 
                 const res = await fetch(`${API_URL}/history?${params}`);
                 const json = await res.json();
@@ -140,7 +100,7 @@ export const SensorHistory = () => {
 
         const t = setTimeout(fetchData, 300);
         return () => clearTimeout(t);
-    }, [currentPage, itemsPerPage, selectedSensor, searchMode, searchDate, searchHour, searchMinute, searchSecond, sortConfig, searchTerm]);
+    }, [currentPage, itemsPerPage, selectedSensor, sortConfig, searchTerm]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -157,35 +117,6 @@ export const SensorHistory = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    const handleTimeKeyDown = (e) => {
-        const input = e.target;
-        if (e.key === 'ArrowRight' && input.selectionStart === input.value.length) {
-            const next = input.nextElementSibling;
-            if (next && next.nextElementSibling && next.nextElementSibling.tagName === 'INPUT') {
-                e.preventDefault();
-                next.nextElementSibling.focus();
-            }
-        } else if (e.key === 'ArrowLeft' && input.selectionEnd === 0) {
-            const prev = input.previousElementSibling;
-            if (prev && prev.previousElementSibling && prev.previousElementSibling.tagName === 'INPUT') {
-                e.preventDefault();
-                prev.previousElementSibling.focus();
-            }
-        }
-    };
-
-    const handleTimePaste = (e) => {
-        const pasted = e.clipboardData.getData('text');
-        const parts = pasted.split(/[:\s-]/).filter(p => p.trim() !== '' && !isNaN(p));
-        if (parts.length >= 2) {
-            e.preventDefault();
-            setSearchHour(parts[0].slice(0, 2).padStart(2, '0'));
-            setSearchMinute(parts[1].slice(0, 2).padStart(2, '0'));
-            setSearchSecond(parts[2] ? parts[2].slice(0, 2).padStart(2, '0') : '00');
-            setCurrentPage(1);
-        }
-    };
 
     const sensorTabs = [
         { id: 'all', label: 'Tất cả', icon: Activity, color: 'text-white' },
@@ -230,65 +161,19 @@ export const SensorHistory = () => {
                     </div>
 
                     <div className="flex gap-2 flex-1 min-w-[300px]">
-                        <div className="flex flex-col gap-1 w-full sm:w-auto">
-                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Chế độ Tìm</span>
-                            <select 
-                                value={searchMode} 
-                                onChange={e => { setSearchMode(e.target.value); setCurrentPage(1); }}
-                                className="px-3 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50"
-                                style={{ colorScheme: 'dark' }}
-                            >
-                                <option value="time" className="bg-slate-900 text-white">Thời gian</option>
-                                <option value="sensor" className="bg-slate-900 text-white">Cảm biến</option>
-                                <option value="compound" className="bg-slate-900 text-white">Phức hợp</option>
-                            </select>
+                        <div className="flex flex-col gap-1 w-[350px]">
+                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Tìm kiếm (#ID, Giá trị, Thời gian)</span>
+                            <div className="relative">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" size={14} />
+                                <input
+                                    type="text"
+                                    placeholder="Ví dụ: #123, 50.5, 14:39:33 30/3..."
+                                    value={searchTerm}
+                                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                                    className="w-full pl-8 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 placeholder:text-white/20 transition-all font-mono"
+                                />
+                            </div>
                         </div>
-
-                        {(searchMode === 'time' || searchMode === 'compound') && (
-                            <>
-                                <div className="flex flex-col gap-1 lg:w-36">
-                                    <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Ngày</span>
-                                    <div className="relative">
-                                        <input
-                                            type="date"
-                                            value={searchDate}
-                                            onChange={(e) => { setSearchDate(e.target.value); setCurrentPage(1); }}
-                                            className="w-full pl-3 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50"
-                                            style={{ colorScheme: 'dark' }}
-                                        />
-                                    </div>
-                                </div>
-                                <div className="flex flex-col gap-1 w-[160px]">
-                                    <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Giờ : Phút : Giây</span>
-                                    <div className="flex bg-black/20 border border-white/10 rounded-lg overflow-hidden">
-                                        <input type="text" placeholder="HH" maxLength={2} value={searchHour} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchHour(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
-                                        <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
-                                        <input type="text" placeholder="MM" maxLength={2} value={searchMinute} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchMinute(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
-                                        <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
-                                        <input type="text" placeholder="SS" maxLength={2} value={searchSecond} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchSecond(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
-                                    </div>
-                                </div>
-                            </>
-                        )}
-                        
-                        {(searchMode === 'sensor' || searchMode === 'compound') && (
-                            <>
-
-                                <div className="flex flex-col gap-1 flex-1 min-w-[150px]">
-                                    <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Tìm kiếm (#ID hoặc Giá trị)</span>
-                                    <div className="relative">
-                                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" size={14} />
-                                        <input
-                                            type="text"
-                                            placeholder="Ví dụ: #123, 50.5..."
-                                            value={searchTerm}
-                                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                                            className="w-full pl-8 pr-2 py-1.5 bg-black/20 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-cyan-500/50 placeholder:text-white/20"
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        )}
                     </div>
                 </div>
             </motion.div>

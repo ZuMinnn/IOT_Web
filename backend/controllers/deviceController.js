@@ -11,11 +11,12 @@ const getStatus = async (req, res, next) => {
         const status = { ...defaultStates };
 
         for (const device of devices) {
-            const latest = await DeviceAction.findOne({
-                where: { deviceID: device.ID },
+            // CHỈ lấy bản ghi THÀNH CÔNG gần nhất (bỏ qua các bản ghi pending/failed)
+            const latestValid = await DeviceAction.findOne({
+                where: { deviceID: device.ID, status: 'success' },
                 order: [['date', 'DESC']],
             });
-            if (latest) status[device.name] = latest.action === 'ON';
+            if (latestValid) status[device.name] = latestValid.action === 'ON';
         }
 
         res.json(status);
@@ -42,26 +43,55 @@ const getHistory = async (req, res, next) => {
             if (fromDate) where.date[Op.gte] = new Date(fromDate);
             if (toDate)   where.date[Op.lte] = new Date(toDate);
         }
+        if (req.query.action && req.query.action !== 'all') {
+            const actionParam = req.query.action;
+            if (actionParam === 'ON_success') {
+                where.action = 'ON';
+                where.status = 'success';
+            } else if (actionParam === 'OFF_success') {
+                where.action = 'OFF';
+                where.status = 'success';
+            } else if (actionParam === 'error') {
+                where.status = 'failed';
+            } else if (actionParam === 'ON_failed') {
+                where.action = 'ON';
+                where.status = 'failed';
+            } else if (actionParam === 'OFF_failed') {
+                where.action = 'OFF';
+                where.status = 'failed';
+            } else {
+                where.action = actionParam.toUpperCase();
+            }
+        }
+
         if (keyword) {
             if (keyword.startsWith('#')) {
                 const idSearch = keyword.substring(1);
                 where.ID = { [Op.like]: `%${idSearch}%` };
             } else {
-                const searchLower = keyword.toLowerCase().trim();
-                if (searchLower === 'on') {
-                    where.action = 'ON';
-                    where.status = 'success';
-                } else if (searchLower === 'off') {
-                    where.action = 'OFF';
-                    where.status = 'success';
-                } else if (searchLower === 'fail' || searchLower === 'failed') {
-                    where.status = 'failed';
-                } else {
-                    where[Op.or] = [
-                        { action: { [Op.like]: `%${keyword}%` } },
-                        { status: { [Op.like]: `%${keyword}%` } },
-                    ];
-                }
+                const searchVal = keyword.trim();
+                const sequelize = require('../config/database');
+                const searchFilters = [
+                    { action: { [Op.like]: `%${searchVal}%` } },
+                    { status: { [Op.like]: `%${searchVal}%` } },
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%H:%i:%s %d/%m/%Y'),
+                        { [Op.like]: `%${searchVal}%` }
+                    ),
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%H:%i:%s %e/%c/%Y'),
+                        { [Op.like]: `%${searchVal}%` }
+                    ),
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%d/%m/%Y %H:%i:%s'),
+                        { [Op.like]: `%${searchVal}%` }
+                    ),
+                    sequelize.where(
+                        sequelize.fn('DATE_FORMAT', sequelize.col('date'), '%e/%c/%Y %H:%i:%s'),
+                        { [Op.like]: `%${searchVal}%` }
+                    )
+                ];
+                where[Op.or] = searchFilters;
             }
         }
 
@@ -123,7 +153,16 @@ const control = async (req, res, next) => {
                     await checkLog.update({ status: 'failed', running: 0 });
                     const { pushDeviceStatus } = require('../services/websocketService');
                     
-                    pushDeviceStatus({ device: deviceName, error: 'timeout' });
+                    // Lấy ra trạng thái THÀNH CÔNG gần nhất để báo Web cập nhật (Rollback UI)
+                    const lastSuccess = await DeviceAction.findOne({
+                        where: { deviceID: device.ID, status: 'success' },
+                        order: [['date', 'DESC']]
+                    });
+                    
+                    // Nếu lỗi thì phải giữ nguyên trạng thái cũ
+                    const realState = lastSuccess ? (lastSuccess.action === 'ON') : false;
+                    
+                    pushDeviceStatus({ device: deviceName, is_on: realState, error: 'timeout' });
                 }
             } catch (err) {
                 console.error("Lỗi Timeout check", err);
