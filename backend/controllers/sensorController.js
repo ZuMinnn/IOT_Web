@@ -38,6 +38,20 @@ const getHistory = async (req, res, next) => {
         if (req.query.startDate) where.date = { [Op.gte]: new Date(req.query.startDate) };
         if (req.query.endDate)   where.date = { ...where.date, [Op.lte]: new Date(req.query.endDate) };
 
+        const andConditions = [];
+        if (req.query.searchHour) {
+            andConditions.push(sequelize.where(sequelize.fn('HOUR', sequelize.col('date')), req.query.searchHour));
+        }
+        if (req.query.searchMinute) {
+            andConditions.push(sequelize.where(sequelize.fn('MINUTE', sequelize.col('date')), req.query.searchMinute));
+        }
+        if (req.query.searchSecond) {
+            andConditions.push(sequelize.where(sequelize.fn('SECOND', sequelize.col('date')), req.query.searchSecond));
+        }
+        if (andConditions.length > 0) {
+            where[Op.and] = andConditions;
+        }
+
         if (req.query.keyword) {
             if (req.query.keyword.startsWith('#')) {
                 const idSearch = req.query.keyword.substring(1);

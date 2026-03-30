@@ -122,7 +122,7 @@ async function handleDeviceSync() {
     try {
         const devices = await Device.findAll();
         for (const device of devices) {
-            // Chỉ lấy trạng thái success thay vì bất kỳ trạng thái nào
+            // 
             const lastSuccessAction = await DeviceAction.findOne({
                 where: { deviceID: device.ID, status: 'success' },
                 order: [['date', 'DESC']]
@@ -133,7 +133,7 @@ async function handleDeviceSync() {
                 publishDeviceControl(device.name, actionStr);
                 console.log(`Synced ${device.name} -> ${actionStr}`);
                 
-                // Tránh ESP8266 bị ngợp khi nhận nhiều lệnh cùng lúc
+                // 
                 await new Promise(resolve => setTimeout(resolve, 300));
             }
         }

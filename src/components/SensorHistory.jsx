@@ -14,6 +14,9 @@ export const SensorHistory = () => {
     const [selectedSensor, setSelectedSensor] = useState('all');
     const [sortConfig, setSortConfig] = useState({ key: 'date', direction: 'desc' });
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchHour, setSearchHour] = useState('');
+    const [searchMinute, setSearchMinute] = useState('');
+    const [searchSecond, setSearchSecond] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -33,6 +36,9 @@ export const SensorHistory = () => {
                 params.append('sortDir', sortConfig.direction);
 
                 if (searchTerm) params.append('keyword', searchTerm);
+                if (searchHour) params.append('searchHour', searchHour);
+                if (searchMinute) params.append('searchMinute', searchMinute);
+                if (searchSecond) params.append('searchSecond', searchSecond);
 
                 const res = await fetch(`${API_URL}/history?${params}`);
                 const json = await res.json();
@@ -100,7 +106,7 @@ export const SensorHistory = () => {
 
         const t = setTimeout(fetchData, 300);
         return () => clearTimeout(t);
-    }, [currentPage, itemsPerPage, selectedSensor, sortConfig, searchTerm]);
+    }, [currentPage, itemsPerPage, selectedSensor, sortConfig, searchTerm, searchHour, searchMinute, searchSecond]);
 
     const handleSort = (key) => {
         let direction = 'asc';
@@ -117,6 +123,35 @@ export const SensorHistory = () => {
     };
 
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+    const handleTimeKeyDown = (e) => {
+        const input = e.target;
+        if (e.key === 'ArrowRight' && input.selectionStart === input.value.length) {
+            const next = input.nextElementSibling;
+            if (next && next.nextElementSibling && next.nextElementSibling.tagName === 'INPUT') {
+                e.preventDefault();
+                next.nextElementSibling.focus();
+            }
+        } else if (e.key === 'ArrowLeft' && input.selectionEnd === 0) {
+            const prev = input.previousElementSibling;
+            if (prev && prev.previousElementSibling && prev.previousElementSibling.tagName === 'INPUT') {
+                e.preventDefault();
+                prev.previousElementSibling.focus();
+            }
+        }
+    };
+
+    const handleTimePaste = (e) => {
+        const pasted = e.clipboardData.getData('text');
+        const parts = pasted.split(/[:\s-]/).filter(p => p.trim() !== '' && !isNaN(p));
+        if (parts.length >= 2) {
+            e.preventDefault();
+            setSearchHour(parts[0].slice(0, 2).padStart(2, '0'));
+            setSearchMinute(parts[1].slice(0, 2).padStart(2, '0'));
+            setSearchSecond(parts[2] ? parts[2].slice(0, 2).padStart(2, '0') : '00');
+            setCurrentPage(1);
+        }
+    };
 
     const sensorTabs = [
         { id: 'all', label: 'Tất cả', icon: Activity, color: 'text-white' },
@@ -160,8 +195,18 @@ export const SensorHistory = () => {
                         </div>
                     </div>
 
-                    <div className="flex gap-2 flex-1 min-w-[300px]">
-                        <div className="flex flex-col gap-1 w-[350px]">
+                    <div className="flex gap-4 flex-1 min-w-[300px] xl:ml-auto">
+                        <div className="flex flex-col gap-1 w-[160px]">
+                            <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Giờ : Phút : Giây</span>
+                            <div className="flex bg-black/20 border border-white/10 rounded-lg overflow-hidden h-[34px]">
+                                <input type="text" placeholder="HH" maxLength={2} value={searchHour} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchHour(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                                <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
+                                <input type="text" placeholder="MM" maxLength={2} value={searchMinute} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchMinute(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                                <span className="text-white/30 self-center font-bold pointer-events-none">:</span>
+                                <input type="text" placeholder="SS" maxLength={2} value={searchSecond} onKeyDown={handleTimeKeyDown} onPaste={handleTimePaste} onChange={e => {setSearchSecond(e.target.value); setCurrentPage(1)}} className="w-full text-center py-1.5 bg-transparent text-sm w-12 text-white focus:outline-none" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-1 w-full xl:w-[350px]">
                             <span className="text-[10px] text-white/50 uppercase font-semibold pl-1">Tìm kiếm (#ID, Giá trị, Thời gian)</span>
                             <div className="relative">
                                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-white/30" size={14} />

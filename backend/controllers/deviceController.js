@@ -43,6 +43,22 @@ const getHistory = async (req, res, next) => {
             if (fromDate) where.date[Op.gte] = new Date(fromDate);
             if (toDate)   where.date[Op.lte] = new Date(toDate);
         }
+        
+        const andConditions = [];
+        const sequelize = require('../config/database');
+        if (req.query.searchHour) {
+            andConditions.push(sequelize.where(sequelize.fn('HOUR', sequelize.col('date')), req.query.searchHour));
+        }
+        if (req.query.searchMinute) {
+            andConditions.push(sequelize.where(sequelize.fn('MINUTE', sequelize.col('date')), req.query.searchMinute));
+        }
+        if (req.query.searchSecond) {
+            andConditions.push(sequelize.where(sequelize.fn('SECOND', sequelize.col('date')), req.query.searchSecond));
+        }
+        if (andConditions.length > 0) {
+            where[Op.and] = andConditions;
+        }
+
         if (req.query.action && req.query.action !== 'all') {
             const actionParam = req.query.action;
             if (actionParam === 'ON_success') {
@@ -153,13 +169,13 @@ const control = async (req, res, next) => {
                     await checkLog.update({ status: 'failed', running: 0 });
                     const { pushDeviceStatus } = require('../services/websocketService');
                     
-                    // Lấy ra trạng thái THÀNH CÔNG gần nhất để báo Web cập nhật (Rollback UI)
+                    //
                     const lastSuccess = await DeviceAction.findOne({
                         where: { deviceID: device.ID, status: 'success' },
                         order: [['date', 'DESC']]
                     });
                     
-                    // Nếu lỗi thì phải giữ nguyên trạng thái cũ
+                    //
                     const realState = lastSuccess ? (lastSuccess.action === 'ON') : false;
                     
                     pushDeviceStatus({ device: deviceName, is_on: realState, error: 'timeout' });
