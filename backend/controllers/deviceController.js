@@ -7,7 +7,7 @@ const defaultStates = { fan: false, airConditioner: false, light: false };
 // GET /api/device/status
 const getStatus = async (req, res, next) => {
     try {
-        const devices = await Device.findAll();
+        const devices = await Device.findAll(); // lay tat ca ban ghi trong bang device
         const status = { ...defaultStates };
 
         for (const device of devices) {
@@ -103,7 +103,7 @@ const control = async (req, res, next) => {
             return res.status(404).json({ error: `Device "${deviceName}" not found` });
         }
 
-        const log = await DeviceAction.create({
+        const log = await DeviceAction.create({ //insert into
             deviceID: device.ID,
             action,
             status:   'pending', // save log với trạng thái chờ xử lý

@@ -36,7 +36,7 @@ const CustomTooltip = ({ active, payload }) => {
                                 style={{ backgroundColor: entry.color }}
                             />
                             <span className="text-white text-sm font-medium">
-                                {entry.name}: {entry.dataKey === 'temperature' ? Number(entry.value).toFixed(2) : entry.value}
+                                {entry.name}: {!isNaN(parseFloat(entry.value)) ? parseFloat(entry.value).toFixed(2) : entry.value}
                                 {entry.dataKey === 'temperature' && '°C'}
                                 {entry.dataKey === 'humidity' && '%'}
                                 {entry.dataKey === 'light' && ' lux'}
@@ -75,6 +75,13 @@ export const SensorChart = ({ data }) => {
                             minTickGap={30}
                         />
                         <YAxis
+                            yAxisId="left"
+                            stroke="rgba(255,255,255,0.5)"
+                            tick={{ fill: 'rgba(255,255,255,0.7)' }}
+                        />
+                        <YAxis
+                            yAxisId="right"
+                            orientation="right"
                             stroke="rgba(255,255,255,0.5)"
                             tick={{ fill: 'rgba(255,255,255,0.7)' }}
                         />
@@ -92,6 +99,7 @@ export const SensorChart = ({ data }) => {
                             activeDot={{ r: 5 }}
                             name="Nhiệt độ"
                             animationDuration={500}
+                            yAxisId="left"
                         />
                         <Line
                             type="monotone"
@@ -102,6 +110,7 @@ export const SensorChart = ({ data }) => {
                             activeDot={{ r: 5 }}
                             name="Độ ẩm"
                             animationDuration={500}
+                            yAxisId="left"
                         />
                         <Line
                             type="monotone"
@@ -112,7 +121,7 @@ export const SensorChart = ({ data }) => {
                             activeDot={{ r: 5 }}
                             name="Ánh sáng"
                             animationDuration={500}
-                            yAxisId={0}
+                            yAxisId="right"
                         />
                     </LineChart>
                 </ResponsiveContainer>

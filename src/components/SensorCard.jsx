@@ -83,7 +83,9 @@ export const SensorCard = ({
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.3 }}
                 >
-                    <span className="text-6xl font-bold text-white text-3d-light">{value}</span>
+                    <span className="text-6xl font-bold text-white text-3d-light">
+                        {!isNaN(parseFloat(value)) ? parseFloat(value).toFixed(2) : value}
+                    </span>
                     <span className="text-2xl text-white/80 font-semibold">{unit}</span>
                 </motion.div>
 

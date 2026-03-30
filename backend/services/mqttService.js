@@ -53,8 +53,15 @@ async function onSensorData(payload) {
     const saved = {};
 
     for (const sensor of sensors) {
-        const value = payload[sensor.name];
+        let value = payload[sensor.name];
         if (value === undefined) continue;
+
+        // Chuẩn hóa lấy tối đa 2 chữ số thập phân
+        if (typeof value === 'number') {
+            value = Math.round(value * 100) / 100;
+        } else if (typeof value === 'string' && !isNaN(parseFloat(value))) {
+            value = parseFloat(parseFloat(value).toFixed(2));
+        }
 
         await SensorData.create({ SensorID: sensor.ID, value, date: new Date() });
         saved[sensor.name] = value;
